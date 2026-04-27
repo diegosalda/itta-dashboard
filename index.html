@@ -459,20 +459,23 @@ function diasHTML(atual,ant){
   return{html:DI.map((d,i)=>{const v=mA[d],va=mB[d],dd=dlt(v,va),pk=v>=mx*.9;return`<div class="dc ${pk?'peak':''}"><div class="dc-n">${AB[i]}</div><div class="dc-v">${fmt(v)}</div><div class="dc-d">${dd!==null?(+dd>=0?'↑':'↓')+Math.abs(dd)+'%':''}</div></div>`;}).join(''),mA,mB,DI,AB};
 }
 
+let _aplicarTimer=null;
 function aplicar(){
+  if(_aplicarTimer) clearTimeout(_aplicarTimer);
+  _aplicarTimer = setTimeout(_aplicarExec, 50);
+}
+function _aplicarExec(){
   try {
     const{i,f}=calcP(),{i:ci,f:cf}=calcC(i,f);
     const at=filtrar(RAW,i,f),an=filtrar(RAW,ci,cf);
     console.log('aplicar: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
     Object.keys(CHARTS).forEach(k=>dC(k));
-    requestAnimationFrame(function(){
-      if(PAGE==='overview')pgOverview(at,an,i,f,ci,cf);
-      else if(PAGE==='sabores')pgSabores(at,an);
-      else if(PAGE==='horarios')pgHorarios(at,an);
-      else if(PAGE==='dias')pgDias(at,an);
-      else if(PAGE==='tabela')pgTabela(at,an);
-    });
+    if(PAGE==='overview')pgOverview(at,an,i,f,ci,cf);
+    else if(PAGE==='sabores')pgSabores(at,an);
+    else if(PAGE==='horarios')pgHorarios(at,an);
+    else if(PAGE==='dias')pgDias(at,an);
+    else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
     document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro: '+e.message+'</div>';
