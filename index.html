@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -487,8 +487,11 @@ function pgOverview(at,an,i,f,ci,cf){
   const sabA=new Set(at.map(d=>d.sabor)).size;
   const sabB=new Set(an.map(d=>d.sabor)).size;
   const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
-  const pedA=VRAW.length?VRAW.filter(v=>v.data>=is&&v.data<=fs).length:new Set(at.map(d=>d.id).filter(Boolean)).size;
-  const pedB=VRAW.length?VRAW.filter(v=>v.data>=cis&&v.data<=cfs).length:new Set(an.map(d=>d.id).filter(Boolean)).size;
+  // Tenta Vendas_Raw primeiro, se não tiver dados no período usa Sabores_Raw
+  const vrawA = VRAW.filter(v=>v.data>=is&&v.data<=fs);
+  const vrawB = VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
+  const pedA = vrawA.length > 0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size;
+  const pedB = vrawB.length > 0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size;
   const canA=VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel).length;
   const canB=VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel).length;
   const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canA,canB);
