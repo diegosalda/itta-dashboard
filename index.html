@@ -387,7 +387,7 @@ async function load(){
         const mc = document.getElementById('mc');
         if (mc) mc.innerHTML='<div class="loading"><div class="spin"></div>Carregando dados... '+pct+'%</div>';
         if (idx < totalRows) { setTimeout(processChunk, 0); }
-        else { console.log('RAW carregado:', RAW.length, 'registros'); resolve(); }
+        else { console.log('RAW v2.0 carregado:', RAW.length, 'registros'); resolve(); }
       }
       setTimeout(processChunk, 0);
     });
@@ -468,7 +468,7 @@ function _aplicarExec(){
   try {
     const{i,f}=calcP(),{i:ci,f:cf}=calcC(i,f);
     const at=filtrar(RAW,i,f),an=filtrar(RAW,ci,cf);
-    console.log('aplicar: page='+PAGE+' at='+at.length+' an='+an.length);
+    console.log('aplicar v2.0: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
     Object.keys(CHARTS).forEach(k=>dC(k));
     if(PAGE==='overview')pgOverview(at,an,i,f,ci,cf);
