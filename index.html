@@ -477,64 +477,105 @@ function aplicar(){
   }
 }
 
-function pgOverview(at,an,i,f,ci,cf){ try {
-  console.log('pgOverview: at=',at.length,'an=',an.length);
-  const totA=at.reduce((s,d)=>s+d.qtd,0),totB=an.reduce((s,d)=>s+d.qtd,0);
-  const sabA=new Set(at.map(d=>d.sabor)).size,sabB=new Set(an.map(d=>d.sabor)).size;
-  const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
-  // Pedidos únicos contados da Sabores_Raw (já filtrada por horário/dia)
-  // Fallback para Vendas_Raw apenas quando sem filtro de hora
-  const hiAtivo = document.getElementById('fHi').value !== '17:30' || document.getElementById('fHf').value !== '23:00';
-  const diaAtivo = getDias().length < 7;
-  const usarSabRaw = hiAtivo || diaAtivo;
-  const pedA = usarSabRaw
-    ? new Set(at.map(d=>d.id).filter(Boolean)).size
-    : (VRAW.length ? VRAW.filter(v=>v.data>=is&&v.data<=fs).length : new Set(at.map(d=>d.id).filter(Boolean)).size);
-  const pedB = usarSabRaw
-    ? new Set(an.map(d=>d.id).filter(Boolean)).size
-    : (VRAW.length ? VRAW.filter(v=>v.data>=cis&&v.data<=cfs).length : new Set(an.map(d=>d.id).filter(Boolean)).size);
-  // Cancelados sempre da Vendas_Raw (não tem horário)
-  const canA=VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel).length;
-  const canB=VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel).length;
-  const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canA,canB);
+function pgOverview(at,an,i,f,ci,cf){
+  try {
+    const totA=at.reduce((s,d)=>s+d.qtd,0);
+    const totB=an.reduce((s,d)=>s+d.qtd,0);
+    const sabA=new Set(at.map(d=>d.sabor)).size;
+    const sabB=new Set(an.map(d=>d.sabor)).size;
+    const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
+    const pedA=VRAW.length?VRAW.filter(v=>v.data>=is&&v.data<=fs).length:new Set(at.map(d=>d.id).filter(Boolean)).size;
+    const pedB=VRAW.length?VRAW.filter(v=>v.data>=cis&&v.data<=cfs).length:new Set(an.map(d=>d.id).filter(Boolean)).size;
+    const canA=VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel).length;
+    const canB=VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel).length;
+    const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canA,canB);
 
-  const mapaA=agrupS(at),mapaB=agrupS(an);
-  const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
-  const mx=top5[0]?.[1].total||1;
+    // Agrupa sabores
+    const mapaA=agrupS(at),mapaB=agrupS(an);
+    const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+    const mx=top5[0]?.[1].total||1;
+    const topRows=top5.map(([sab,v],i)=>{
+      const va=mapaB[sab]?.total||0,dd=dlt(v.total,va),pct=Math.round(v.total/mx*100);
+      const cls=i===0?'g1':i===1?'g2':i===2?'g3':'';
+      return`<div class="ri"><div class="ri-pos ${cls}">${i+1}</div><div class="ri-info"><div class="ri-nome">${sab}</div><div class="ri-tags">${v.G?`<span class="tag tag-G">G ${fmt(v.G)}</span>`:''} ${v.M?`<span class="tag tag-M">M ${fmt(v.M)}</span>`:''} ${v.P?`<span class="tag tag-P">P ${fmt(v.P)}</span>`:''}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%"></div></div>${dd!==null?`<div class="ri-d">${badge(dd)} <span style="color:var(--txt3);font-size:9px">vs ant. (${fmt(va)})</span></div>`:''}</div><div class="ri-qtd">${fmt(v.total)}</div></div>`;
+    }).join('');
 
-  const{html:bHtml,mA:bA,mB:bB,BL}=blocoHTML(at,an);
-  const{html:dHtml,mA:dA,mB:dB,DI,AB}=diasHTML(at,an);
+    // Blocos horário
+    const BLO=['17:30','18:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00','22:30'];
+    const bA={},bB={};BLO.forEach(b=>{bA[b]=0;bB[b]=0;});
+    at.forEach(d=>{if(bA[d.bloco]!==undefined)bA[d.bloco]+=d.qtd;});
+    an.forEach(d=>{if(bB[d.bloco]!==undefined)bB[d.bloco]+=d.qtd;});
+    const mxB=Math.max(...Object.values(bA))||1;
+    const blocoHtml=BLO.map(b=>{
+      const v=bA[b],va=bB[b],dd=dlt(v,va),pk=v>=mxB*.85;
+      return`<div class="bloco ${pk?'peak':''}"><div class="bl-h">${b}</div><div class="bl-v">${fmt(v)}</div><div class="bl-d">${dd!==null?(+dd>=0?'↑':'↓')+Math.abs(dd)+'%':''}</div></div>`;
+    }).join('');
 
-  const datas=[...new Set(at.map(d=>d.data))].sort();
-  const datasAn=[...new Set(an.map(d=>d.data))].sort();
-  const mEA={},mEB={};at.forEach(d=>{mEA[d.data]=(mEA[d.data]||0)+d.qtd;});an.forEach(d=>{mEB[d.data]=(mEB[d.data]||0)+d.qtd;});
+    // Dias semana
+    const DI=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'],AB=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+    const dA={},dB={};DI.forEach(d=>{dA[d]=0;dB[d]=0;});
+    at.forEach(d=>{if(dA[d.dia]!==undefined)dA[d.dia]+=d.qtd;});
+    an.forEach(d=>{if(dB[d.dia]!==undefined)dB[d.dia]+=d.qtd;});
 
-  document.getElementById('mc').innerHTML=`
-    <div class="metrics">
-      <div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">${fmt(totA)}</div><div class="mc-comp">${badge(d1)}<span class="mc-ct">vs ant. (${fmt(totB)})</span></div></div>
-      <div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Pedidos únicos</div><div class="mc-val">${fmt(pedA)}</div><div class="mc-comp">${badge(d2)}<span class="mc-ct">vs ant. (${fmt(pedB)})</span></div></div>
-      <div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">${sabA}</div><div class="mc-comp">${badge(d3)}<span class="mc-ct">vs ant. (${sabB})</span></div></div>
-      <div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">${fmt(canA)}</div><div class="mc-comp">${badge(d4,true)}<span class="mc-ct">vs ant. (${fmt(canB)})</span></div></div>
-    </div>
-    <div class="g31">
-      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução diária</div><div class="card-sub">Atual (vermelho) vs anterior (roxo)</div></div></div><canvas id="cEv" height="170"></canvas></div>
-      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 5 sabores</div><div class="card-sub">Com comparativo</div></div></div>${rankHTML(top5,mapaB,mx)}</div>
-    </div>
-    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Pico horário</div><div class="card-sub">Blocos de 30min · pico em destaque</div></div></div><div class="blocos">${bHtml}</div></div>
-    <div class="g2">
-      <div class="card"><div class="card-hdr"><div class="card-ttl">Por dia da semana</div></div><canvas id="cDia" height="200"></canvas></div>
-      <div class="card"><div class="card-hdr"><div class="card-ttl">Evolução horária</div></div><canvas id="cHor" height="200"></canvas></div>
-    </div>`;
+    // Evolução diária
+    const datas=[...new Set(at.map(d=>d.data))].sort();
+    const datasAn=[...new Set(an.map(d=>d.data))].sort();
+    const mEA={},mEB={};
+    at.forEach(d=>{mEA[d.data]=(mEA[d.data]||0)+d.qtd;});
+    an.forEach(d=>{mEB[d.data]=(mEB[d.data]||0)+d.qtd;});
 
-  dC('cEv');CHARTS['cEv']=new Chart(document.getElementById('cEv').getContext('2d'),{type:'line',data:{labels:datas.map(d=>d.substring(5).replace('-','/')),datasets:[{label:'Atual',data:datas.map(d=>mEA[d]||0),borderColor:'#e03535',backgroundColor:'rgba(224,53,53,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#e03535'},{label:'Anterior',data:datasAn.map(d=>mEB[d]||0),borderColor:'#a855f7',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}]},options:{...CO}});
+    const mc=document.getElementById('mc');
+    mc.innerHTML=`
+      <div class="metrics">
+        <div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">${fmt(totA)}</div><div class="mc-comp">${badge(d1)}<span class="mc-ct">vs ant. (${fmt(totB)})</span></div></div>
+        <div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Pedidos únicos</div><div class="mc-val">${fmt(pedA)}</div><div class="mc-comp">${badge(d2)}<span class="mc-ct">vs ant. (${fmt(pedB)})</span></div></div>
+        <div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">${sabA}</div><div class="mc-comp">${badge(d3)}<span class="mc-ct">vs ant. (${sabB})</span></div></div>
+        <div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">${fmt(canA)}</div><div class="mc-comp">${badge(d4,true)}<span class="mc-ct">vs ant. (${fmt(canB)})</span></div></div>
+      </div>
+      <div class="g31">
+        <div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução diária</div><div class="card-sub">Atual vs anterior</div></div></div><canvas id="cEv" height="170"></canvas></div>
+        <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 5 sabores</div><div class="card-sub">Com comparativo</div></div></div>${topRows}</div>
+      </div>
+      <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Pico horário</div><div class="card-sub">Blocos de 30min</div></div></div><div class="blocos">${blocoHtml}</div></div>
+      <div class="g2">
+        <div class="card"><div class="card-hdr"><div class="card-ttl">Por dia da semana</div></div><canvas id="cDia" height="200"></canvas></div>
+        <div class="card"><div class="card-hdr"><div class="card-ttl">Evolução horária</div></div><canvas id="cHor" height="200"></canvas></div>
+      </div>`;
 
-  const BLO=['17:30','18:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00','22:30'];
-  dC('cHor');CHARTS['cHor']=new Chart(document.getElementById('cHor').getContext('2d'),{type:'line',data:{labels:BLO,datasets:[{label:'Atual',data:BLO.map(b=>bA[b]||0),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},{label:'Anterior',data:BLO.map(b=>bB[b]||0),borderColor:'rgba(249,115,22,0.4)',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}]},options:{...CO}});
+    // Charts
+    dC('cEv');
+    CHARTS['cEv']=new Chart(document.getElementById('cEv').getContext('2d'),{
+      type:'line',
+      data:{labels:datas.map(d=>d.substring(5).replace('-','/')),datasets:[
+        {label:'Atual',data:datas.map(d=>mEA[d]||0),borderColor:'#e03535',backgroundColor:'rgba(224,53,53,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#e03535'},
+        {label:'Anterior',data:datasAn.map(d=>mEB[d]||0),borderColor:'#a855f7',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}
+      ]},options:{...CO}
+    });
 
-  dC('cDia');CHARTS['cDia']=new Chart(document.getElementById('cDia').getContext('2d'),{type:'bar',data:{labels:AB,datasets:[{label:'Atual',data:DI.map(d=>dA[d]),backgroundColor:'#22c55e',borderRadius:6},{label:'Anterior',data:DI.map(d=>dB[d]),backgroundColor:'rgba(34,197,94,0.25)',borderRadius:6}]},options:{...CO}});
+    dC('cDia');
+    CHARTS['cDia']=new Chart(document.getElementById('cDia').getContext('2d'),{
+      type:'bar',
+      data:{labels:AB,datasets:[
+        {label:'Atual',data:DI.map(d=>dA[d]),backgroundColor:'#22c55e',borderRadius:6},
+        {label:'Anterior',data:DI.map(d=>dB[d]),backgroundColor:'rgba(34,197,94,0.25)',borderRadius:6}
+      ]},options:{...CO}
+    });
 
-  } catch(e) { console.error('ERRO pgOverview:', e.message, e.stack); document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro: '+e.message+'</div>'; }
+    dC('cHor');
+    CHARTS['cHor']=new Chart(document.getElementById('cHor').getContext('2d'),{
+      type:'line',
+      data:{labels:BLO,datasets:[
+        {label:'Atual',data:BLO.map(b=>bA[b]||0),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
+        {label:'Anterior',data:BLO.map(b=>bB[b]||0),borderColor:'rgba(249,115,22,0.4)',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}
+      ]},options:{...CO}
+    });
+
+  } catch(e) {
+    console.error('ERRO pgOverview:', e.message, e.stack);
+    document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro: '+e.message+'</div>';
+  }
 }
+
 function pgSabores(at,an){
   const mA=agrupS(at),mB=agrupS(an);
   const lista=Object.entries(mA).sort((a,b)=>b[1].total-a[1].total);
