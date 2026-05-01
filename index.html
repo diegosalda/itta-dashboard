@@ -315,7 +315,7 @@ let cMode='auto',PAGE='analytics',CHARTS={};
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',tabela:'Tabela completa'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
