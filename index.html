@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -204,6 +204,26 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .btn-logout{margin-left:auto;background:none;border:none;color:var(--txt3);cursor:pointer;font-size:11px;font-family:inherit;padding:2px 6px;border-radius:4px}
 .btn-logout:hover{color:var(--r)}
 
+
+/* FINANCEIRO */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.fin-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.canal-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.canal-item:last-child{border:none;padding-bottom:0}
+.canal-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.canal-info{flex:1}
+.canal-nome{font-size:12px;font-weight:600}
+.canal-bar-wrap{width:100%;height:3px;background:var(--bg3);border-radius:2px;margin-top:4px}
+.canal-bar-fill{height:100%;border-radius:2px}
+.canal-val{font-size:13px;font-weight:800;color:var(--txt);text-align:right;flex-shrink:0}
+.sfi{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sfi:last-child{border:none;padding-bottom:0}
+.sfi-pos{font-size:11px;font-weight:800;width:18px;color:var(--txt3);flex-shrink:0}
+.sfi-info{flex:1;min-width:0}
+.sfi-nome{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sfi-sub{font-size:9px;color:var(--txt3);margin-top:1px}
+.sfi-val{font-size:13px;font-weight:800;color:var(--green);flex-shrink:0}
+
 </style>
 </head>
 <body>
@@ -219,6 +239,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('horarios',this)"><span class="nav-icon">⏱</span>Horários</div>
       <div class="nav-item" onclick="goPage('dias',this)"><span class="nav-icon">📅</span>Dias da semana</div>
       <div class="nav-sec">Dados</div>
+      <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('tabela',this)"><span class="nav-icon">📋</span>Tabela completa</div>
     </nav>
     <div class="sidebar-foot">
@@ -288,7 +309,7 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
@@ -466,7 +487,8 @@ function aplicar(){
     console.log('aplicar v2.0: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
     Object.keys(CHARTS).forEach(k=>dC(k));
-    if(PAGE==='analytics')pgOverview(at,an,i,f,ci,cf);
+    if(PAGE==='financeiro'){pgFinanceiro(at,an,i,f,ci,cf);}
+    else if(PAGE==='analytics')pgOverview(at,an,i,f,ci,cf);
     else if(PAGE==='sabores')pgSabores(at,an);
     else if(PAGE==='horarios')pgHorarios(at,an);
     else if(PAGE==='dias')pgDias(at,an);
@@ -574,6 +596,158 @@ function pgOverview(at,an,i,f,ci,cf){
     }catch(ec){console.error('Erro charts:',ec.message);}
   },200);
 }
+
+function pgFinanceiro(at,an,i,f,ci,cf){
+  const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+
+  // Dados financeiros do período
+  const vhA=VHIST.filter(v=>v.data>=is&&v.data<=fs);
+  const vhB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs);
+
+  // Fallback: usa Vendas_Raw se Vendas_Historico não tiver dados do período
+  const vrA=VRAW.filter(v=>v.data>=is&&v.data<=fs);
+  const vrB=VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
+
+  const fA = vhA.length>0 ? vhA : vrA.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}));
+  const fB = vhB.length>0 ? vhB : vrB.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}));
+
+  const fatA=fA.reduce((s,v)=>s+v.valor,0);
+  const fatB=fB.reduce((s,v)=>s+v.valor,0);
+  const tickA=fA.length>0?(fatA/fA.length):0;
+  const tickB=fB.length>0?(fatB/fB.length):0;
+  const descA=fA.reduce((s,v)=>s+v.desconto,0);
+  const descB=fB.reduce((s,v)=>s+v.desconto,0);
+  const entA=fA.reduce((s,v)=>s+v.entrega,0);
+  const entB=fB.reduce((s,v)=>s+v.entrega,0);
+
+  const d1=dlt(fatA,fatB),d2=dlt(tickA,tickB),d3=dlt(descA,descB);
+
+  // Por canal
+  const canais={};
+  fA.forEach(v=>{const c=v.canal||'Outros';if(!canais[c])canais[c]=0;canais[c]+=v.valor;});
+  const cList=Object.entries(canais).sort((a,b)=>b[1]-a[1]);
+  const maxC=cList[0]?.[1]||1;
+  const cColors=['#e03535','#f97316','#a855f7','#22c55e','#3b82f6','#eab308'];
+  const canalHtml=cList.map(([nome,val],i)=>{
+    const pct=Math.round(val/fatA*100);
+    const barW=Math.round(val/maxC*100);
+    return '<div class="canal-item">'+
+      '<div class="canal-dot" style="background:'+cColors[i%cColors.length]+'"></div>'+
+      '<div class="canal-info">'+
+        '<div class="canal-nome">'+nome+'</div>'+
+        '<div class="canal-bar-wrap"><div class="canal-bar-fill" style="width:'+barW+'%;background:'+cColors[i%cColors.length]+'"></div></div>'+
+        '<div style="font-size:9px;color:var(--txt3);margin-top:2px">'+pct+'% do faturamento</div>'+
+      '</div>'+
+      '<div class="canal-val">'+fmtR(val)+'</div>'+
+    '</div>';
+  }).join('');
+
+  // Receita estimada por sabor (R$ médio por tamanho × quantidade)
+  // Preços médios Itta
+  const PRECO={Grande:89.9,Media:59.9,Pequena:39.9};
+  const mapaA=agrupS(at);
+  const saborFin=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,10).map(([sab,v])=>{
+    const recEst=(v.G||0)*PRECO.Grande+(v.M||0)*PRECO.Media+(v.P||0)*PRECO.Pequena;
+    return{sab,v,recEst};
+  }).sort((a,b)=>b.recEst-a.recEst);
+  const maxRec=saborFin[0]?.recEst||1;
+  const saborHtml=saborFin.map((s,i)=>{
+    const pct=Math.round(s.recEst/maxRec*100);
+    return '<div class="sfi">'+
+      '<div class="sfi-pos">'+(i+1)+'</div>'+
+      '<div class="sfi-info">'+
+        '<div class="sfi-nome">'+s.sab+'</div>'+
+        '<div class="sfi-sub">'+fmt(s.v.total)+' pizzas · G:'+fmt(s.v.G||0)+' M:'+fmt(s.v.M||0)+' P:'+fmt(s.v.P||0)+'</div>'+
+        '<div style="height:3px;background:var(--bg3);border-radius:2px;margin-top:4px"><div style="width:'+pct+'%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div>'+
+      '</div>'+
+      '<div class="sfi-val">'+fmtR(s.recEst)+'</div>'+
+    '</div>';
+  }).join('');
+
+  // Faturamento por dia da semana
+  const DI=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'],AB=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const fdA={},fdB={};DI.forEach(d=>{fdA[d]=0;fdB[d]=0;});
+  fA.forEach(v=>{
+    // Calcula dia da semana a partir da data
+    if(v.data){const dt=new Date(v.data+'T12:00:00');const d=DI[dt.getDay()===0?6:dt.getDay()-1];if(d)fdA[d]+=v.valor;}
+  });
+  fB.forEach(v=>{
+    if(v.data){const dt=new Date(v.data+'T12:00:00');const d=DI[dt.getDay()===0?6:dt.getDay()-1];if(d)fdB[d]+=v.valor;}
+  });
+
+  // Faturamento por hora (usando Sabores_Raw com preço estimado)
+  const BLO=['17:30','18:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00','22:30'];
+  const fhA={},fhB={};BLO.forEach(b=>{fhA[b]=0;fhB[b]=0;});
+  at.forEach(d=>{
+    if(fhA[d.bloco]!==undefined){
+      const p=d.tamanho==='Grande'?PRECO.Grande:d.tamanho==='Média'?PRECO.Media:PRECO.Pequena;
+      fhA[d.bloco]+=d.qtd*p;
+    }
+  });
+  an.forEach(d=>{
+    if(fhB[d.bloco]!==undefined){
+      const p=d.tamanho==='Grande'?PRECO.Grande:d.tamanho==='Média'?PRECO.Media:PRECO.Pequena;
+      fhB[d.bloco]+=d.qtd*p;
+    }
+  });
+
+  // Evolução diária de faturamento
+  const datas=[...new Set(fA.map(v=>v.data))].sort();
+  const datasB=[...new Set(fB.map(v=>v.data))].sort();
+  const mFA={},mFB={};
+  fA.forEach(v=>{mFA[v.data]=(mFA[v.data]||0)+v.valor;});
+  fB.forEach(v=>{mFB[v.data]=(mFB[v.data]||0)+v.valor;});
+
+  mc.innerHTML=
+    '<div class="fin-grid">'+
+    '<div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento</div><div class="mc-val" style="font-size:20px">'+fmtR(fatA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmtR(fatB)+')</span></div></div>'+
+    '<div class="mc orange"><div class="mc-icon">🎯</div><div class="mc-lbl">Ticket médio</div><div class="mc-val" style="font-size:20px">'+fmtR(tickA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmtR(tickB)+')</span></div></div>'+
+    '<div class="mc purple"><div class="mc-icon">🏷️</div><div class="mc-lbl">Total descontos</div><div class="mc-val" style="font-size:20px">'+fmtR(descA)+'</div><div class="mc-comp">'+badge(d3,true)+'<span class="mc-ct">vs ant. ('+fmtR(descB)+')</span></div></div>'+
+    '</div>'+
+    '<div class="fin-row">'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução do faturamento</div><div class="card-sub">Receita diária atual vs anterior</div></div></div><canvas id="cFatEv" height="180"></canvas></div>'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Por canal de venda</div><div class="card-sub">Distribuição do faturamento</div></div></div>'+canalHtml+'</div>'+
+    '</div>'+
+    '<div class="fin-row">'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita por dia da semana</div><div class="card-sub">Faturamento real acumulado</div></div></div><canvas id="cFatDia" height="200"></canvas></div>'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita por horário</div><div class="card-sub">Estimada por tamanho × preço médio</div></div></div><canvas id="cFatHor" height="200"></canvas></div>'+
+    '</div>'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita estimada por sabor</div><div class="card-sub">Top 10 · preço médio × quantidade por tamanho</div></div></div>'+saborHtml+'</div>';
+
+  setTimeout(function(){
+    try{
+      dC('cFatEv');
+      CHARTS['cFatEv']=new Chart(document.getElementById('cFatEv').getContext('2d'),{
+        type:'line',
+        data:{labels:datas.map(d=>d.substring(5).replace('-','/')),datasets:[
+          {label:'Atual',data:datas.map(d=>mFA[d]||0),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
+          {label:'Anterior',data:datasB.map(d=>mFB[d]||0),borderColor:'rgba(34,197,94,0.4)',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}
+        ]},
+        options:{...CO,plugins:{...CO.plugins,tooltip:{callbacks:{label:function(ctx){return ' R$ '+ctx.raw.toLocaleString('pt-BR',{minimumFractionDigits:0});}}}}}
+      });
+      dC('cFatDia');
+      CHARTS['cFatDia']=new Chart(document.getElementById('cFatDia').getContext('2d'),{
+        type:'bar',
+        data:{labels:AB,datasets:[
+          {label:'Atual',data:DI.map(d=>Math.round(fdA[d])),backgroundColor:'#22c55e',borderRadius:6},
+          {label:'Anterior',data:DI.map(d=>Math.round(fdB[d])),backgroundColor:'rgba(34,197,94,0.25)',borderRadius:6}
+        ]},options:{...CO}
+      });
+      dC('cFatHor');
+      CHARTS['cFatHor']=new Chart(document.getElementById('cFatHor').getContext('2d'),{
+        type:'line',
+        data:{labels:BLO,datasets:[
+          {label:'Atual',data:BLO.map(b=>Math.round(fhA[b])),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
+          {label:'Anterior',data:BLO.map(b=>Math.round(fhB[b])),borderColor:'rgba(249,115,22,0.4)',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}
+        ]},options:{...CO}
+      });
+    }catch(ec){console.error('Fin charts err:',ec.message);}
+  },200);
+}
+
+function fmtR(n){if(!n)return'R$ 0';return'R$ '+Math.round(n).toLocaleString('pt-BR');}
 
 function pgSabores(at,an){
   const mA=agrupS(at),mB=agrupS(an);
