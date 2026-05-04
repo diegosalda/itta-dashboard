@@ -641,7 +641,15 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   const entA=fA.reduce((s,v)=>s+v.entrega,0);
   const entB=fB.reduce((s,v)=>s+v.entrega,0);
 
-  const d1=dlt(fatA,fatB),d2=dlt(tickA,tickB),d3=dlt(descA,descB);
+  // Cancelados em R$
+  const vhCancelA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
+  const vhCancelB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
+  const cancelValA=vhCancelA.reduce((s,v)=>s+(v.valor||0),0);
+  const cancelValB=vhCancelB.reduce((s,v)=>s+(v.valor||0),0);
+  const cancelQtA=vhCancelA.length;
+  const cancelQtB=vhCancelB.length;
+
+  const d1=dlt(fatA,fatB),d2=dlt(tickA,tickB),d3=dlt(descA,descB),d5=dlt(cancelValA,cancelValB);
 
   // Por canal
   const canais={};
@@ -720,10 +728,11 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   fB.forEach(v=>{mFB[v.data]=(mFB[v.data]||0)+v.valor;});
 
   mc.innerHTML=
-    '<div class="fin-grid">'+
-    '<div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento</div><div class="mc-val" style="font-size:20px">'+fmtR(fatA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmtR(fatB)+')</span></div></div>'+
-    '<div class="mc orange"><div class="mc-icon">🎯</div><div class="mc-lbl">Ticket médio</div><div class="mc-val" style="font-size:20px">'+fmtR(tickA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmtR(tickB)+')</span></div></div>'+
-    '<div class="mc purple"><div class="mc-icon">🏷️</div><div class="mc-lbl">Total descontos</div><div class="mc-val" style="font-size:20px">'+fmtR(descA)+'</div><div class="mc-comp">'+badge(d3,true)+'<span class="mc-ct">vs ant. ('+fmtR(descB)+')</span></div></div>'+
+    '<div class="metrics">'+
+    '<div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento líquido</div><div class="mc-val" style="font-size:22px">'+fmtR(fatA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmtR(fatB)+')</span></div></div>'+
+    '<div class="mc orange"><div class="mc-icon">🎯</div><div class="mc-lbl">Ticket médio</div><div class="mc-val" style="font-size:22px">'+fmtR(tickA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmtR(tickB)+')</span></div></div>'+
+    '<div class="mc purple"><div class="mc-icon">🏷️</div><div class="mc-lbl">Descontos concedidos</div><div class="mc-val" style="font-size:22px">'+fmtR(descA)+'</div><div class="mc-comp">'+badge(d3,true)+'<span class="mc-ct">vs ant. ('+fmtR(descB)+')</span></div></div>'+
+    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val" style="font-size:22px">'+fmtR(cancelValA)+'</div><div class="mc-comp" style="flex-wrap:wrap;gap:4px"><span style="font-size:10px;color:var(--txt3)">'+cancelQtA+' pedidos</span> '+badge(d5,true)+'<span class="mc-ct">vs ant. ('+fmtR(cancelValB)+')</span></div></div>'+
     '</div>'+
     '<div class="fin-row">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução do faturamento</div><div class="card-sub">Receita diária atual vs anterior</div></div></div><canvas id="cFatEv" height="180"></canvas></div>'+
