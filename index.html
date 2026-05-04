@@ -428,8 +428,8 @@ async function load(){
         } else if(typeof dv==='string') dt=dv.substring(0,10);
         const st=r.c[7]?.v||'';
         return{id:String(r.c[0]?.v||''),data:dt,canal:r.c[2]?.v||'',valor:parseFloat(r.c[4]?.v||0),desconto:parseFloat(r.c[5]?.v||0),entrega:parseFloat(r.c[6]?.v||0),cancelado:st==='Cancelado'};
-      }).filter(d=>d.id&&!d.cancelado);
-      console.log('Vendas_Historico:',VHIST.length);
+      }).filter(d=>d.id); // mantém cancelados para cálculo
+      console.log('Vendas_Historico:',VHIST.length,'(incl. cancelados)');
     }catch(e){console.log('VH err:',e);}
 
     // Vendas_Raw
@@ -622,15 +622,16 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   if(!mc)return;
 
   // Dados financeiros do período
-  const vhA=VHIST.filter(v=>v.data>=is&&v.data<=fs);
+  const vhA=VHIST.filter(v=>v.data>=is&&v.data<=fs); // todos incluindo cancelados
   const vhB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs);
 
   // Fallback: usa Vendas_Raw se Vendas_Historico não tiver dados do período
   const vrA=VRAW.filter(v=>v.data>=is&&v.data<=fs);
   const vrB=VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
 
-  const fA = vhA.length>0 ? vhA : vrA.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}));
-  const fB = vhB.length>0 ? vhB : vrB.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}));
+  // Para faturamento: exclui cancelados
+  const fA = (vhA.length>0 ? vhA : vrA.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}))).filter(v=>!v.cancelado);
+  const fB = (vhB.length>0 ? vhB : vrB.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}))).filter(v=>!v.cancelado);
 
   const fatA=fA.reduce((s,v)=>s+v.valor,0);
   const fatB=fB.reduce((s,v)=>s+v.valor,0);
