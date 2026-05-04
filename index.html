@@ -413,6 +413,25 @@ async function load(){
       setTimeout(processChunk, 0);
     });
 
+    // Vendas_Historico (financeiro histórico completo)
+    try{
+      const urlH=BASE+encodeURIComponent('Vendas_Historico');
+      const respH=await fetch(urlH);
+      const txtH=await respH.text();
+      const jsonH=JSON.parse(txtH.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      VHIST=jsonH.table.rows.slice(1).map(r=>{
+        let dt='';
+        const dv=r.c[1]?.v||'';
+        if(typeof dv==='string'&&dv.startsWith('Date(')){
+          const p=dv.replace('Date(','').replace(')','').split(',');
+          dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');
+        } else if(typeof dv==='string') dt=dv.substring(0,10);
+        const st=r.c[7]?.v||'';
+        return{id:String(r.c[0]?.v||''),data:dt,canal:r.c[2]?.v||'',valor:parseFloat(r.c[4]?.v||0),desconto:parseFloat(r.c[5]?.v||0),entrega:parseFloat(r.c[6]?.v||0),cancelado:st==='Cancelado'};
+      }).filter(d=>d.id&&!d.cancelado);
+      console.log('Vendas_Historico:',VHIST.length);
+    }catch(e){console.log('VH err:',e);}
+
     // Vendas_Raw
     try{
       const rv=await fetch(BASE+encodeURIComponent('Vendas_Raw'));
