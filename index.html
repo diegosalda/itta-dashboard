@@ -419,7 +419,9 @@ async function load(){
       const respH=await fetch(urlH);
       const txtH=await respH.text();
       const jsonH=JSON.parse(txtH.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-      VHIST=jsonH.table.rows.slice(1).map(r=>{
+      const rawRowsH=jsonH.table.rows.slice(1);
+      console.log('[STATUS RAW]', rawRowsH.slice(0,10).map(r=>r.c[7]?.v));
+      VHIST=rawRowsH.map(r=>{
         let dt='';
         const dv=r.c[1]?.v||'';
         if(typeof dv==='string'&&dv.startsWith('Date(')){
@@ -430,6 +432,8 @@ async function load(){
         return{id:String(r.c[0]?.v||''),data:dt,canal:r.c[2]?.v||'',subtotal:parseFloat(r.c[3]?.v||0),valor:parseFloat(r.c[4]?.v||0),desconto:parseFloat(r.c[5]?.v||0),entrega:parseFloat(r.c[6]?.v||0),cancelado:st.trim().toLowerCase()==='cancelado'};
       }).filter(d=>d.id); // mantém cancelados para cálculo
       console.log('Vendas_Historico:',VHIST.length,'(incl. cancelados)');
+      console.log('[VHIST SAMPLE]', VHIST.slice(0,5));
+      console.log('[CANCEL COUNT]', VHIST.filter(v=>v.cancelado).length);
     }catch(e){console.log('VH err:',e);}
 
     // Vendas_Raw
@@ -645,6 +649,7 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   // Cancelados em R$
   const vhCancelA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
   console.log('[CANCEL DEBUG] vhCancelA count:', vhCancelA.length, 'sample:', vhCancelA.slice(0,3));
+  console.log('[DATE RANGE]', is, fs, 'VHIST date sample:', VHIST.slice(0,3).map(v=>v.data));
   const vhCancelB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
   const cancelValA=vhCancelA.reduce((s,v)=>s+(v.valor||v.subtotal||v.total||0),0);
   const cancelValB=vhCancelB.reduce((s,v)=>s+(v.valor||0),0);
