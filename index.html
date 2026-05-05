@@ -408,7 +408,7 @@ async function load(){
         const mc = document.getElementById('mc');
         if (mc) mc.innerHTML='<div class="loading"><div class="spin"></div>Carregando dados... '+pct+'%</div>';
         if (idx < totalRows) { setTimeout(processChunk, 0); }
-        else { console.log('RAW v2.0 carregado:', RAW.length, 'registros'); resolve(); }
+        else { console.log('RAW v2.0 carregado:', RAW.length, 'registros'); console.log('[RAW SAMPLE]', RAW.slice(0,3).map(r=>({data:r.data,hora:r.hora,bloco:r.bloco,qtd:r.qtd}))); console.log('[BLOCO COUNT]', RAW.filter(r=>r.bloco).length, 'of', RAW.length); resolve(); }
       }
       setTimeout(processChunk, 0);
     });
