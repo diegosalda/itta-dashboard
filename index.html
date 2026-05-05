@@ -652,8 +652,10 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   const cancelValB=cancelSrcB.reduce((s,v)=>s+(v.valor||v.subtotal||v.total||0),0);
   const cancelQtA=cancelSrcA.length;
   const cancelQtB=cancelSrcB.length;
+  const cancelValEstA=cancelQtA*tickA;
+  const cancelValEstB=cancelQtB*tickB;
 
-  const d1=dlt(fatA,fatB),d2=dlt(tickA,tickB),d3=dlt(descA,descB),d5=dlt(cancelValA,cancelValB);
+  const d1=dlt(fatA,fatB),d2=dlt(tickA,tickB),d3=dlt(descA,descB),d5=dlt(cancelValEstA,cancelValEstB);
 
   // Por canal
   const canais={};
@@ -736,7 +738,7 @@ function pgFinanceiro(at,an,i,f,ci,cf){
     '<div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento líquido</div><div class="mc-val" style="font-size:22px">'+fmtR(fatA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmtR(fatB)+')</span></div></div>'+
     '<div class="mc orange"><div class="mc-icon">🎯</div><div class="mc-lbl">Ticket médio</div><div class="mc-val" style="font-size:22px">'+fmtR(tickA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmtR(tickB)+')</span></div></div>'+
     '<div class="mc purple"><div class="mc-icon">🏷️</div><div class="mc-lbl">Descontos concedidos</div><div class="mc-val" style="font-size:22px">'+fmtR(descA)+'</div><div class="mc-comp">'+badge(d3,true)+'<span class="mc-ct">vs ant. ('+fmtR(descB)+')</span></div></div>'+
-    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val" style="font-size:22px">'+fmtR(cancelValA)+'</div><div class="mc-comp" style="flex-wrap:wrap;gap:4px"><span style="font-size:10px;color:var(--txt3)">'+cancelQtA+' pedidos</span> '+badge(d5,true)+'<span class="mc-ct">vs ant. ('+fmtR(cancelValB)+')</span></div></div>'+
+    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val" style="font-size:22px">'+fmtR(cancelValEstA)+'</div><div style="font-size:9px;color:var(--txt3);margin-top:3px">⚠️ estimativa baseada no ticket médio</div><div class="mc-comp" style="flex-wrap:wrap;gap:4px"><span style="font-size:10px;color:var(--txt3)">'+cancelQtA+' pedidos</span> '+badge(d5,true)+'<span class="mc-ct">vs ant. ('+fmtR(cancelValEstB)+')</span></div></div>'+
     '</div>'+
     '<div class="fin-row">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução do faturamento</div><div class="card-sub">Receita diária atual vs anterior</div></div></div><canvas id="cFatEv" height="180"></canvas></div>'+
