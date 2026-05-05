@@ -395,9 +395,8 @@ async function load(){
         const end = Math.min(idx + CHUNK, rows.length);
         for (let i = idx; i < end; i++) {
           const r = rows[i];
-          if(i<4)console.log('[RAW ROW RAW]',i,'c[1]:',JSON.stringify(r.c[1]),'c[2]:',JSON.stringify(r.c[2]));
           const d = {
-            data:pD(r.c[0]?.v),hora:pH(r.c[1]?.v),bloco:r.c[2]?.v?String(r.c[2].v).substring(0,5):pB(r.c[1]?.v),
+            data:pD(r.c[0]?.v),hora:r.c[1]?.f?String(r.c[1].f).substring(0,5):pH(r.c[1]?.v),bloco:r.c[2]?.f?String(r.c[2].f).substring(0,5):(r.c[2]?.v?String(r.c[2].v).substring(0,5):pB(r.c[1]?.v)),
             dia:r.c[3]?.v||'',sabor:norm(r.c[4]?.v||''),
             tamanho:r.c[5]?.v||'',tipo:r.c[6]?.v||'',
             qtd:parseFloat(r.c[7]?.v||0),id:String(r.c[8]?.v||'')
