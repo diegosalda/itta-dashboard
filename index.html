@@ -379,8 +379,8 @@ async function load(){
     const r=await fetch(BASE+encodeURIComponent('Sabores_6meses'));
     const t=await r.text();
     const j=JSON.parse(t.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-    function pH(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p2(+p[3])+':'+p2(+p[4]);}return String(v).substring(0,5);}
-    function pB(v){const h=pH(v);if(!h)return'';const p=h.split(':');return p[0]+':'+(+p[1]<30?'00':'30');}
+    function pH(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p2(+p[3])+':'+p2(+p[4]);}if(typeof v==='string'&&v.match(/^\d{1,2}:\d{2}/))return v.substring(0,5);if(typeof v==='number'){const totalMin=Math.round(v*24*60);return p2(Math.floor(totalMin/60))+':'+p2(totalMin%60);}return'';}
+    function pB(v){const h=pH(v);if(!h||h.includes('N'))return'';const p=h.split(':');if(p.length<2)return'';return p2(+p[0])+':'+(+p[1]<30?'00':'30');}
     function pD(v){let s='';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');s=p[0]+'-'+p2(+p[1]+1)+'-'+p2(+p[2]);}else if(typeof v==='string')s=v.substring(0,10);return s;}
     RAW = []; // garante reset antes de processar
     const totalRows = j.table.rows.length;
@@ -396,7 +396,7 @@ async function load(){
         for (let i = idx; i < end; i++) {
           const r = rows[i];
           const d = {
-            data:pD(r.c[0]?.v),hora:pH(r.c[1]?.v),bloco:pB(r.c[2]?.v),
+            data:pD(r.c[0]?.v),hora:pH(r.c[1]?.v),bloco:r.c[2]?.v?String(r.c[2].v).substring(0,5):pB(r.c[1]?.v),
             dia:r.c[3]?.v||'',sabor:norm(r.c[4]?.v||''),
             tamanho:r.c[5]?.v||'',tipo:r.c[6]?.v||'',
             qtd:parseFloat(r.c[7]?.v||0),id:String(r.c[8]?.v||'')
@@ -408,7 +408,7 @@ async function load(){
         const mc = document.getElementById('mc');
         if (mc) mc.innerHTML='<div class="loading"><div class="spin"></div>Carregando dados... '+pct+'%</div>';
         if (idx < totalRows) { setTimeout(processChunk, 0); }
-        else { console.log('RAW v2.0 carregado:', RAW.length, 'registros'); console.log('[RAW SAMPLE]', RAW.slice(0,3).map(r=>({data:r.data,hora:r.hora,bloco:r.bloco,qtd:r.qtd}))); console.log('[BLOCO COUNT]', RAW.filter(r=>r.bloco).length, 'of', RAW.length); resolve(); }
+        else { console.log('RAW v2.0 carregado:', RAW.length, 'registros'); resolve(); }
       }
       setTimeout(processChunk, 0);
     });
