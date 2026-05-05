@@ -443,7 +443,7 @@ async function load(){
         if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+p2(+p[1]+1)+'-'+p2(+p[2]);}
         else if(typeof dv==='string')dt=dv.substring(0,10);
         const st=r.c[7]?.v||'';
-        return{id:String(r.c[0]?.v||''),data:dt,st,cancel:st==='Cancelado'};
+        return{id:String(r.c[0]?.v||''),data:dt,st,cancel:st.trim().toLowerCase()==='cancelado'};
       }).filter(d=>d.id);
       VRAW=VCMP.filter(d=>!d.cancel);
     }catch(e){console.log('Vendas err',e);}
