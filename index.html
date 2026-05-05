@@ -529,11 +529,13 @@ function pgOverview(at,an,i,f,ci,cf){
   const sabA=new Set(at.map(d=>d.sabor)).size;
   const sabB=new Set(an.map(d=>d.sabor)).size;
   const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
-  // Tenta Vendas_Raw primeiro, se não tiver dados no período usa Sabores_Raw
   const vrawA = VRAW.filter(v=>v.data>=is&&v.data<=fs);
   const vrawB = VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
-  const pedA = vrawA.length > 0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size;
-  const pedB = vrawB.length > 0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size;
+  // Pedidos únicos: VHIST (histórico completo) → VRAW → fallback IDs de RAW
+  const vhPedA = VHIST.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado);
+  const vhPedB = VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&!v.cancelado);
+  const pedA = vhPedA.length>0 ? vhPedA.length : (vrawA.length>0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size);
+  const pedB = vhPedB.length>0 ? vhPedB.length : (vrawB.length>0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size);
   // Cancelamentos: VHIST primeiro, fallback VCMP
   const vhCancA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
   const vhCancB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
