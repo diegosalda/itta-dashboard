@@ -534,9 +534,21 @@ function pgOverview(at,an,i,f,ci,cf){
   const vrawB = VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
   const pedA = vrawA.length > 0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size;
   const pedB = vrawB.length > 0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size;
-  const canA=VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel).length;
-  const canB=VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel).length;
-  const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canA,canB);
+  // Cancelamentos: VHIST primeiro, fallback VCMP
+  const vhCancA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
+  const vhCancB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
+  const canSrcA=vhCancA.length>0?vhCancA:VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel);
+  const canSrcB=vhCancB.length>0?vhCancB:VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel);
+  const canA=canSrcA.length;
+  const canB=canSrcB.length;
+  // Ticket médio estimado via VHIST para calcular valor dos cancelamentos
+  const vhOvA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado);
+  const vhOvB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&!v.cancelado);
+  const tickOvA=vhOvA.length>0?vhOvA.reduce((s,v)=>s+(v.valor||0),0)/vhOvA.length:0;
+  const tickOvB=vhOvB.length>0?vhOvB.reduce((s,v)=>s+(v.valor||0),0)/vhOvB.length:0;
+  const canEstA=canA*tickOvA;
+  const canEstB=canB*tickOvB;
+  const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canEstA,canEstB);
 
   const mapaA=agrupS(at),mapaB=agrupS(an);
   const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
@@ -572,7 +584,7 @@ function pgOverview(at,an,i,f,ci,cf){
     '<div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">'+fmt(totA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmt(totB)+')</span></div></div>'+
     '<div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Pedidos únicos</div><div class="mc-val">'+fmt(pedA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmt(pedB)+')</span></div></div>'+
     '<div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">'+sabA+'</div><div class="mc-comp">'+badge(d3)+'<span class="mc-ct">vs ant. ('+sabB+')</span></div></div>'+
-    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">'+fmt(canA)+'</div><div class="mc-comp">'+badge(d4,true)+'<span class="mc-ct">vs ant. ('+fmt(canB)+')</span></div></div>'+
+    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">'+fmtR(canEstA)+'</div><div style="font-size:9px;color:var(--txt3);margin-top:3px">⚠️ estimativa baseada no ticket médio</div><div class="mc-comp">'+badge(d4,true)+'<span style="font-size:10px;color:var(--txt3)">'+canA+' pedidos</span><span class="mc-ct">vs ant. ('+fmtR(canEstB)+')</span></div></div>'+
     '</div>'+
     '<div class="g31">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução diária</div><div class="card-sub">Atual vs anterior</div></div></div><canvas id="cEv" height="170"></canvas></div>'+
