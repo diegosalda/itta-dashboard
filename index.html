@@ -16,8 +16,20 @@
   --blue:#3b82f6;--yellow:#eab308;--teal:#14b8a6;
   --radius:14px;--radius-sm:10px;
 }
+*:not(canvas){transition:background-color .2s,color .2s,border-color .2s}
 *{box-sizing:border-box;margin:0;padding:0}
 html{font-size:14px}
+[data-theme='light']{
+  --bg:#f5f5f0;--bg2:#ffffff;--bg3:#f0ede8;--bg4:#e8e4de;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --txt:#1a1a1a;--txt2:#4a4a5a;--txt3:#8a8799;
+  --r:#c92a2a;--c:#8B1A1A;
+  --green:#1a9e4a;--orange:#d4680a;--purple:#7c3aed;
+  --blue:#2563eb;--yellow:#b45309;--teal:#0d9488;
+}
+[data-theme='light'] .nav-item.active{background:linear-gradient(135deg,rgba(201,42,42,.1),rgba(124,58,237,.06));border-color:rgba(201,42,42,.2)}
+[data-theme='light'] .bloco.peak{background:linear-gradient(135deg,rgba(201,42,42,.12),rgba(124,58,237,.08));border-color:rgba(201,42,42,.2)}
+[data-theme='light'] .dc.peak{background:linear-gradient(135deg,rgba(212,104,10,.15),rgba(180,83,9,.08));border-color:rgba(212,104,10,.25)}
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
@@ -51,6 +63,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .period-lbl{font-size:11px;color:var(--txt3);margin-left:6px}
 .btn-apply{background:var(--r);color:#fff;border:none;padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:opacity .15s}
 .btn-apply:hover{opacity:.85}
+.btn-theme{background:var(--bg3);border:1px solid var(--border);color:var(--txt2);width:32px;height:32px;border-radius:var(--radius-sm);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.btn-theme:hover{background:var(--bg4)}
 
 /* FILTROS */
 .flt-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;flex-shrink:0}
@@ -254,7 +268,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="menu-btn" onclick="toggleSb()">☰</button>
         <div><span class="page-ttl" id="pttl">Visão geral</span><span class="period-lbl" id="plbl"></span></div>
       </div>
-      <button class="btn-apply" onclick="aplicar()">Aplicar filtros</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Alternar tema">🌙</button>
+        <button class="btn-apply" onclick="aplicar()">Aplicar filtros</button>
+      </div>
     </div>
 
     <div class="flt-bar">
@@ -391,6 +408,31 @@ function agrupS(dados){const m={};dados.forEach(d=>{if(!m[d.sabor])m[d.sabor]={t
 function dC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
 
 const CO={responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#9a97a8',font:{size:11,family:'Plus Jakarta Sans'},boxWidth:10,padding:12}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5768',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#5a5768',font:{size:10},maxRotation:40}}}};
+
+const THEME_KEY='itta_theme';
+function applyChartTheme(){
+  const light=document.documentElement.getAttribute('data-theme')==='light';
+  const lc=light?'#4a4a5a':'#9a97a8';
+  const tc=light?'#8a8799':'#5a5768';
+  const gc=light?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.04)';
+  CO.plugins.legend.labels.color=lc;
+  CO.scales.y.ticks.color=tc;
+  CO.scales.x.ticks.color=tc;
+  CO.scales.y.grid.color=gc;
+}
+function applyTheme(theme){
+  if(theme==='light')document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  const btn=document.getElementById('btnTheme');
+  if(btn)btn.textContent=theme==='light'?'☀️':'🌙';
+  localStorage.setItem(THEME_KEY,theme);
+  applyChartTheme();
+}
+function toggleTheme(){
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  applyTheme(isLight?'dark':'light');
+  if(RAW.length||VHIST.length)aplicar();
+}
 
 // Carregar dados
 async function load(){
@@ -1140,6 +1182,7 @@ async function iniciarApp() {
 
 // Ponto de entrada
 let _appIniciado = false;
+applyTheme(localStorage.getItem(THEME_KEY)||'dark');
 (async()=>{
   const lo = document.getElementById('loginOverlay');
   if (verificarSessao()) {
