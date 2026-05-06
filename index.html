@@ -293,6 +293,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
       <div class="flt"><label>Comparar com</label>
         <div class="comp-pill"><span id="cLbl">período anterior</span><button class="btn-trocar" onclick="trocarC()">trocar</button></div>
+        <div id="cManual" style="display:none;align-items:center;gap:6px;margin-top:4px">
+          <input type="date" id="cDe" style="font-size:13px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px" onchange="aplicar()">
+          <span style="font-size:12px;color:#6b7280">→</span>
+          <input type="date" id="cAte" style="font-size:13px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px" onchange="aplicar()">
+        </div>
       </div>
     </div>
 
@@ -334,7 +339,20 @@ function calcP(){
 }
 function calcC(i,f){const d=f-i,cf=new Date(i-1),ci=new Date(cf-d);return{i:ci,f:cf};}
 function chgP(){const v=document.getElementById('fP').value,l=v==='livre';document.getElementById('gIni').style.display=l?'':'none';document.getElementById('gFim').style.display=l?'':'none';}
-function trocarC(){cMode=cMode==='auto'?'manual':'auto';document.getElementById('cLbl').textContent=cMode==='auto'?'período anterior':'manual';}
+function trocarC(){
+  cMode=cMode==='auto'?'manual':'auto';
+  document.getElementById('cLbl').textContent=cMode==='auto'?'período anterior':'manual';
+  const el=document.getElementById('cManual');
+  if(cMode==='manual'){
+    el.style.display='flex';
+    const{i,f}=calcP(),{i:ci,f:cf}=calcC(i,f);
+    document.getElementById('cDe').value=ds(ci);
+    document.getElementById('cAte').value=ds(cf);
+  } else {
+    el.style.display='none';
+  }
+  aplicar();
+}
 function p2(n){return String(n).padStart(2,'0');}
 function ds(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
 function fd(d){return p2(d.getDate())+'/'+p2(d.getMonth()+1);}
@@ -505,7 +523,15 @@ function diasHTML(atual,ant,i,f,ci,cf){
 
 function aplicar(){
   try {
-    const{i,f}=calcP(),{i:ci,f:cf}=calcC(i,f);
+    const{i,f}=calcP();
+    let ci,cf;
+    if(cMode==='manual'){
+      const de=document.getElementById('cDe').value,ate=document.getElementById('cAte').value;
+      if(de&&ate){ci=new Date(de+'T00:00:00');cf=new Date(ate+'T23:59:59');}
+      else{const auto=calcC(i,f);ci=auto.i;cf=auto.f;}
+    } else {
+      const auto=calcC(i,f);ci=auto.i;cf=auto.f;
+    }
     const at=filtrar(RAW,i,f),an=filtrar(RAW,ci,cf);
     console.log('aplicar v2.0: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
