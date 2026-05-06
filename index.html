@@ -961,6 +961,7 @@ function pgBairros(){
   }).join('');
   // Distance buckets
   const STORE_LAT=-12.9891,STORE_LNG=-38.4572;
+  console.log('[DIST DEBUG] Pituba coords:', COORDS['Pituba'], 'dist:', COORDS['Pituba']?haversine(STORE_LAT,STORE_LNG,COORDS['Pituba'].lat,COORDS['Pituba'].lng):'no coords');
   const buckets={};
   dados.forEach(d=>{
     const coord=COORDS[d.bairro];
