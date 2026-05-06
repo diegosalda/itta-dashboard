@@ -663,6 +663,8 @@ function pgOverview(at,an,i,f,ci,cf){
   console.log('[OVERVIEW DEBUG] at.length (RAW filtered):', at.length, 'an.length:', an.length);
   console.log('[OVERVIEW DEBUG] vhPedA.length (VHIST filtered):', vhPedA.length, 'vhPedB.length:', vhPedB.length);
   console.log('[OVERVIEW DEBUG] RAW total:', RAW.length, 'date range sample:', RAW.slice(0,3).map(r=>r.data));
+  console.log('[RAW BY DATE] current period sample count by date:', at.reduce((acc,r)=>{acc[r.data]=(acc[r.data]||0)+1;return acc;},{}));
+  console.log('[RAW BY DATE] comparison period sample count by date:', an.reduce((acc,r)=>{acc[r.data]=(acc[r.data]||0)+1;return acc;},{}));
 
   const mapaA=agrupS(at),mapaB=agrupS(an);
   const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
