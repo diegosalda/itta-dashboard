@@ -898,7 +898,40 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+let distSort='dist_asc';
+let _distBuckets=[];
+
+function renderDistTable(bucketList,sort){
+  const sorted=[...bucketList];
+  if(sort==='dist_asc')sorted.sort((a,b)=>a[1].order-b[1].order);
+  else if(sort==='dist_desc')sorted.sort((a,b)=>b[1].order-a[1].order);
+  else if(sort==='fat_asc')sorted.sort((a,b)=>a[1].faturamento-b[1].faturamento);
+  else if(sort==='fat_desc')sorted.sort((a,b)=>b[1].faturamento-a[1].faturamento);
+  if(!sorted.length)return'<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Sem coordenadas disponíveis para calcular distâncias.</div>';
+  const totalDistPed=sorted.reduce((s,[,v])=>s+v.pedidos,0);
+  const maxDistPed=Math.max(...sorted.map(([,v])=>v.pedidos),1);
+  const hdr=`<div style="display:flex;align-items:center;gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border2);margin-bottom:2px"><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:90px;flex-shrink:0">Faixa</div><div style="flex:1"></div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:30px;text-align:right;flex-shrink:0">%</div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:40px;text-align:right;flex-shrink:0">Pedidos</div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:80px;text-align:right;flex-shrink:0">Fat.</div></div>`;
+  return hdr+sorted.map(([key,v])=>{
+    const pct=Math.round(v.pedidos/maxDistPed*100);
+    const pctTot=totalDistPed>0?Math.round(v.pedidos/totalDistPed*100):0;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:700;width:90px;flex-shrink:0;color:var(--txt2)">${key}</div><div style="flex:1"><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div></div><div style="font-size:11px;color:var(--txt3);width:30px;text-align:right;flex-shrink:0">${pctTot}%</div><div style="font-size:12px;font-weight:700;width:40px;text-align:right;flex-shrink:0">${v.pedidos}</div><div style="font-size:11px;color:var(--green);width:80px;text-align:right;flex-shrink:0">${fmtR(v.faturamento)}</div></div>`;
+  }).join('');
+}
+
+function sortDist(mode){
+  distSort=mode;
+  const el=document.getElementById('distTable');
+  if(!el)return;
+  el.innerHTML=renderDistTable(_distBuckets,distSort);
+  document.querySelectorAll('.dist-sort-btn').forEach(b=>{
+    const active=b.dataset.sort===mode;
+    b.style.background=active?'var(--blue)':'var(--bg3)';
+    b.style.color=active?'#fff':'var(--txt2)';
+  });
+}
+
 function pgBairros(){
+  distSort='dist_asc';
   const{i,f}=calcP();
   const is=ds(i),fs=ds(f);
   const mc=document.getElementById('mc');
@@ -939,21 +972,9 @@ function pgBairros(){
     buckets[key].pedidos++;
     buckets[key].faturamento+=d.valor||0;
   });
-  const bucketList=Object.entries(buckets).sort((a,b)=>a[1].order-b[1].order);
-  const totalDistPed=bucketList.reduce((s,[,v])=>s+v.pedidos,0);
-  const maxDistPed=Math.max(...bucketList.map(([,v])=>v.pedidos),1);
-  let distHtml;
-  if(bucketList.length){
-    const hdr=`<div style="display:flex;align-items:center;gap:10px;padding:0 0 8px;border-bottom:1px solid var(--border2);margin-bottom:2px"><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:90px;flex-shrink:0">Faixa</div><div style="flex:1"></div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:30px;text-align:right;flex-shrink:0">%</div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:40px;text-align:right;flex-shrink:0">Pedidos</div><div style="font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;width:80px;text-align:right;flex-shrink:0">Fat.</div></div>`;
-    distHtml=hdr+bucketList.map(([key,v])=>{
-      const pct=Math.round(v.pedidos/maxDistPed*100);
-      const pctTot=totalDistPed>0?Math.round(v.pedidos/totalDistPed*100):0;
-      return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)"><div style="font-size:11px;font-weight:700;width:90px;flex-shrink:0;color:var(--txt2)">${key}</div><div style="flex:1"><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div></div><div style="font-size:11px;color:var(--txt3);width:30px;text-align:right;flex-shrink:0">${pctTot}%</div><div style="font-size:12px;font-weight:700;width:40px;text-align:right;flex-shrink:0">${v.pedidos}</div><div style="font-size:11px;color:var(--green);width:80px;text-align:right;flex-shrink:0">${fmtR(v.faturamento)}</div></div>`;
-    }).join('');
-  } else {
-    distHtml='<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Sem coordenadas disponíveis para calcular distâncias.</div>';
-  }
-  mc.innerHTML=`<div class="g2" style="margin-bottom:14px"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Distribuição por distância da loja</div><div class="card-sub">Faixas de 0.5 km · linha reta até a Itta Pizzaria</div></div></div>${distHtml}</div>`;
+  _distBuckets=Object.entries(buckets);
+  const sortBtns=[['dist_asc','Distância ↑'],['dist_desc','Distância ↓'],['fat_asc','Faturamento ↑'],['fat_desc','Faturamento ↓']].map(([m,l])=>`<button class="dist-sort-btn" data-sort="${m}" onclick="sortDist('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===distSort?'var(--blue)':'var(--bg3)'};color:${m===distSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
+  mc.innerHTML=`<div class="g2" style="margin-bottom:14px"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Distribuição por distância da loja</div><div class="card-sub">Faixas de 0.5 km · linha reta até a Itta Pizzaria</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${sortBtns}</div></div><div id="distTable">${renderDistTable(_distBuckets,distSort)}</div></div>`;
 }
 
 function pgTabela(at,an){
