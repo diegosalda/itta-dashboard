@@ -961,8 +961,6 @@ function pgBairros(){
   }).join('');
   // Distance buckets
   const STORE_LAT=-12.9891,STORE_LNG=-38.4572;
-  console.log('[COORDS KEYS]', Object.keys(COORDS).slice(0,20));
-  console.log('[BAIRROS SAMPLE]', [...new Set(dados.slice(0,20).map(d=>d.bairro))]);
   const buckets={};
   dados.forEach(d=>{
     const coord=COORDS[d.bairro];
