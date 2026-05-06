@@ -238,6 +238,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('sabores',this)"><span class="nav-icon">🍕</span>Sabores</div>
       <div class="nav-item" onclick="goPage('horarios',this)"><span class="nav-icon">⏱</span>Horários</div>
       <div class="nav-item" onclick="goPage('dias',this)"><span class="nav-icon">📅</span>Dias da semana</div>
+      <div class="nav-item" onclick="goPage('bairros',this)"><span class="nav-icon">📍</span>Bairros</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('tabela',this)"><span class="nav-icon">📋</span>Tabela completa</div>
@@ -314,13 +315,13 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -466,6 +467,23 @@ async function load(){
       VRAW=VCMP.filter(d=>!d.cancel);
     }catch(e){console.log('Vendas err',e);}
 
+    // Bairros_Raw
+    try{
+      const urlBr=BASE+encodeURIComponent('Bairros_Raw');
+      const respBr=await fetch(urlBr);
+      const txtBr=await respBr.text();
+      const jsonBr=JSON.parse(txtBr.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      BAIRROS=jsonBr.table.rows.slice(1).map(r=>{
+        let dt='';
+        const dv=r.c[1]?.v||'';
+        if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
+        else if(typeof dv==='string')dt=dv.substring(0,10);
+        const st=String(r.c[10]?.v||'');
+        return{id:String(r.c[0]?.v||''),data:dt,bairro:r.c[2]?.v||'',rua:r.c[3]?.v||'',numero:r.c[4]?.v||'',cep:r.c[5]?.v||'',complemento:r.c[6]?.v||'',referencia:r.c[7]?.v||'',taxaEntrega:parseFloat(r.c[8]?.v||0),valor:parseFloat(r.c[9]?.v||0),status:st,cancelado:st==='Cancelado'};
+      }).filter(d=>d.id);
+      console.log('Bairros_Raw:',BAIRROS.length,'registros');
+    }catch(e){console.log('Bairros err:',e);}
+
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
@@ -541,6 +559,7 @@ function aplicar(){
     else if(PAGE==='sabores')pgSabores(at,an);
     else if(PAGE==='horarios')pgHorarios(at,an);
     else if(PAGE==='dias')pgDias(at,an,i,f,ci,cf);
+    else if(PAGE==='bairros')pgBairros();
     else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -854,6 +873,37 @@ function pgDias(at,an,i,f,ci,cf){
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Pedidos por dia da semana</div><div class="card-sub">Pico em destaque</div></div></div><div class="dias-cards">${html}</div></div>
     <div class="card"><div class="card-hdr"><div><div class="card-ttl">Comparativo de pedidos · atual vs período anterior</div><div class="card-sub">Atual vs período anterior</div></div></div><canvas id="cD2" height="220"></canvas></div>`;
   dC('cD2');CHARTS['cD2']=new Chart(document.getElementById('cD2').getContext('2d'),{type:'bar',data:{labels:AB,datasets:[{label:'Atual',data:DI.map(d=>mA[d]),backgroundColor:'#22c55e',borderRadius:8},{label:'Anterior',data:DI.map(d=>mB[d]),backgroundColor:'rgba(34,197,94,0.2)',borderRadius:8}]},options:{...CO}});
+}
+
+function pgBairros(){
+  const{i,f}=calcP();
+  const is=ds(i),fs=ds(f);
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  if(!BAIRROS.length){mc.innerHTML='<div class="loading">Dados de bairros não disponíveis.</div>';return;}
+  const dados=BAIRROS.filter(d=>d.data>=is&&d.data<=fs&&!d.cancelado);
+  if(!dados.length){mc.innerHTML='<div class="loading">Sem dados para o período selecionado.</div>';return;}
+  const map={};
+  dados.forEach(d=>{const b=d.bairro||'Desconhecido';if(!map[b])map[b]={pedidos:0,faturamento:0};map[b].pedidos++;map[b].faturamento+=d.valor||0;});
+  const allList=Object.entries(map);
+  const totalPedidos=allList.reduce((s,[,v])=>s+v.pedidos,0);
+  const byPed=[...allList].sort((a,b)=>b[1].pedidos-a[1].pedidos).slice(0,15);
+  const byFat=[...allList].sort((a,b)=>b[1].faturamento-a[1].faturamento).slice(0,15);
+  const maxPed=byPed[0]?.[1].pedidos||1;
+  const maxFat=byFat[0]?.[1].faturamento||1;
+  const leftRows=byPed.map(([bairro,v],idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.pedidos/maxPed*100);
+    const pctTot=totalPedidos>0?Math.round(v.pedidos/totalPedidos*100):0;
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${bairro}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${pctTot}% dos pedidos · ${fmtR(v.faturamento)}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%"></div></div></div><div class="ri-qtd">${v.pedidos}</div></div>`;
+  }).join('');
+  const rightRows=byFat.map(([bairro,v],idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.faturamento/maxFat*100);
+    const tick=v.pedidos>0?v.faturamento/v.pedidos:0;
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${bairro}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">ticket ${fmtR(tick)} · ${v.pedidos} pedidos</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div></div><div class="ri-qtd" style="font-size:11px;color:var(--green)">${fmtR(v.faturamento)}</div></div>`;
+  }).join('');
+  mc.innerHTML=`<div class="g2"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div>`;
 }
 
 function pgTabela(at,an){
