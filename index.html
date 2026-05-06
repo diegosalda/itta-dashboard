@@ -657,6 +657,13 @@ function pgOverview(at,an,i,f,ci,cf){
   const canEstB=canB*tickOvB;
   const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canEstA,canEstB);
 
+  console.log('[OVERVIEW DEBUG] Period:', is, 'to', fs);
+  console.log('[OVERVIEW DEBUG] totA (pizzas):', totA, 'totB:', totB);
+  console.log('[OVERVIEW DEBUG] pedA (pedidos):', pedA, 'pedB:', pedB);
+  console.log('[OVERVIEW DEBUG] at.length (RAW filtered):', at.length, 'an.length:', an.length);
+  console.log('[OVERVIEW DEBUG] vhPedA.length (VHIST filtered):', vhPedA.length, 'vhPedB.length:', vhPedB.length);
+  console.log('[OVERVIEW DEBUG] RAW total:', RAW.length, 'date range sample:', RAW.slice(0,3).map(r=>r.data));
+
   const mapaA=agrupS(at),mapaB=agrupS(an);
   const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
   const mx=top5[0]?.[1].total||1;
