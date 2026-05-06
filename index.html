@@ -491,13 +491,15 @@ function blocoHTML(atual,ant){
   return{html:BL.map(b=>{const v=mA[b],va=mB[b],d=dlt(v,va),pk=v>=mx*.85;return`<div class="bloco ${pk?'peak':''}"><div class="bl-h">${b}</div><div class="bl-v">${fmt(v)}</div><div class="bl-d">${d!==null?(+d>=0?'↑':'↓')+Math.abs(d)+'%':''}</div></div>`;}).join(''),mA,mB,BL};
 }
 
-function diasHTML(atual,ant){
+function diasHTML(atual,ant,i,f,ci,cf){
   const DI=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'],AB=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
-  const mA={},mB={};DI.forEach(d=>{mA[d]=0;mB[d]=0;});
+  const mA={},mB={},countA={},countB={};DI.forEach(d=>{mA[d]=0;mB[d]=0;countA[d]=0;countB[d]=0;});
   atual.forEach(d=>{if(mA[d.dia]!==undefined)mA[d.dia]+=d.qtd;});
   ant.forEach(d=>{if(mB[d.dia]!==undefined)mB[d.dia]+=d.qtd;});
+  if(i&&f){for(var dt=new Date(i);dt<=f;dt.setDate(dt.getDate()+1)){var dn=DI[dt.getDay()===0?6:dt.getDay()-1];if(countA[dn]!==undefined)countA[dn]++;}}
+  if(ci&&cf){for(var dt2=new Date(ci);dt2<=cf;dt2.setDate(dt2.getDate()+1)){var dn2=DI[dt2.getDay()===0?6:dt2.getDay()-1];if(countB[dn2]!==undefined)countB[dn2]++;}}
   const mx=Math.max(...Object.values(mA));
-  return{html:DI.map((d,i)=>{const v=mA[d],va=mB[d],dd=dlt(v,va),pk=v>=mx*.9;return`<div class="dc ${pk?'peak':''}"><div class="dc-n">${AB[i]}</div><div class="dc-v">${fmt(v)}</div><div class="dc-d">${dd!==null?(+dd>=0?'↑':'↓')+Math.abs(dd)+'%':''}</div></div>`;}).join(''),mA,mB,DI,AB};
+  return{html:DI.map((d,idx)=>{const avg=countA[d]>0?mA[d]/countA[d]:0,avgB=countB[d]>0?mB[d]/countB[d]:0,dd=dlt(avg,avgB),pk=mA[d]>=mx*.9;return`<div class="dc ${pk?'peak':''}"><div class="dc-n">${AB[idx]}</div><div class="dc-v">${fmt(mA[d])}</div><div class="dc-d">${dd!==null?(+dd>=0?'↑':'↓')+Math.abs(dd)+'%':''}</div></div>`;}).join(''),mA,mB,DI,AB};
 }
 
 function aplicar(){
@@ -511,7 +513,7 @@ function aplicar(){
     else if(PAGE==='analytics')pgOverview(at,an,i,f,ci,cf);
     else if(PAGE==='sabores')pgSabores(at,an);
     else if(PAGE==='horarios')pgHorarios(at,an);
-    else if(PAGE==='dias')pgDias(at,an);
+    else if(PAGE==='dias')pgDias(at,an,i,f,ci,cf);
     else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -819,8 +821,8 @@ function pgHorarios(at,an){
   dC('cH2');CHARTS['cH2']=new Chart(document.getElementById('cH2').getContext('2d'),{type:'line',data:{labels:BLO,datasets:[{label:'Atual',data:BLO.map(b=>mA[b]||0),borderColor:'#e03535',backgroundColor:'rgba(224,53,53,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#e03535'},{label:'Anterior',data:BLO.map(b=>mB[b]||0),borderColor:'#a855f7',borderDash:[5,3],tension:.4,borderWidth:1.5,pointRadius:2,backgroundColor:'transparent'}]},options:{...CO}});
 }
 
-function pgDias(at,an){
-  const{html,mA,mB,DI,AB}=diasHTML(at,an);
+function pgDias(at,an,i,f,ci,cf){
+  const{html,mA,mB,DI,AB}=diasHTML(at,an,i,f,ci,cf);
   document.getElementById('mc').innerHTML=`
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Volume por dia da semana</div><div class="card-sub">Pico em destaque</div></div></div><div class="dias-cards">${html}</div></div>
     <div class="card"><div class="card-hdr"><div><div class="card-ttl">Comparativo</div><div class="card-sub">Atual vs período anterior</div></div></div><canvas id="cD2" height="220"></canvas></div>`;
