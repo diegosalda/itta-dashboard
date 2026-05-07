@@ -1195,7 +1195,7 @@ function pgBairros(){
   // Tempo de entrega por bairro
   const tempoMap={};
   dados.forEach(d=>{
-    if(!d.tempoEntrega||d.tempoEntrega<=0)return;
+    if(!d.tempoEntrega||d.tempoEntrega<=0||d.tempoEntrega>140)return;
     const b=d.bairro||'Desconhecido';
     if(!tempoMap[b])tempoMap[b]=[];
     tempoMap[b].push(d.tempoEntrega);
