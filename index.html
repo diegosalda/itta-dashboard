@@ -1179,9 +1179,14 @@ function pgClientes(){
   const top3LTVHtml=top3LTV.map((v,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;${i<top3LTV.length-1?'border-bottom:1px solid var(--border)':''}"><span style="font-size:11px;color:var(--txt2);font-weight:600">${v.nome}</span><span style="font-size:11px;color:var(--green);font-weight:700">${fmtR(v.ltv)}/ano</span></div>`).join('')||'<div style="color:var(--txt3);font-size:11px">Dados insuficientes</div>';
 
   mc.innerHTML=`
-    <div class="metrics">
-      <div class="mc blue"><div class="mc-icon">👥</div><div class="mc-lbl">Únicos no período</div><div class="mc-val">${totalUnicos}</div><div class="mc-comp"><span class="mc-ct">${dados.length} pedidos</span></div></div>
-      <div class="mc green"><div class="mc-icon">🆕</div><div class="mc-lbl">Novos no período</div><div class="mc-val">${cntNovos}</div><div class="mc-comp"><span class="mc-ct">1º pedido histórico no período</span></div></div>
+    <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Período selecionado</div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:0">
+      <div class="mc blue"><div class="mc-icon">👥</div><div class="mc-lbl">Clientes no período</div><div class="mc-val">${totalUnicos}</div><div class="mc-comp"><span class="mc-ct">${dados.length} pedidos no período</span></div></div>
+      <div class="mc green"><div class="mc-icon">🆕</div><div class="mc-lbl">Novos clientes</div><div class="mc-val">${cntNovos}</div><div class="mc-comp"><span class="mc-ct">${totalUnicos>0?Math.round(cntNovos/totalUnicos*100):0}% dos clientes do período</span></div></div>
+      <div class="mc purple"><div class="mc-icon">🔄</div><div class="mc-lbl">Clientes recorrentes</div><div class="mc-val">${totalUnicos-cntNovos}</div><div class="mc-comp"><span class="mc-ct">${totalUnicos>0?Math.round((totalUnicos-cntNovos)/totalUnicos*100):0}% dos clientes do período</span></div></div>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px">Base total de clientes</div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
       <div class="mc green"><div class="mc-icon">✅</div><div class="mc-lbl">Ativos</div><div class="mc-val">${cntAtivos}</div><div class="mc-comp"><span class="mc-ct">pedido nos últimos 30 dias</span></div></div>
       <div class="mc orange"><div class="mc-icon">⚠️</div><div class="mc-lbl">Em risco</div><div class="mc-val">${cntEmRisco}</div><div class="mc-comp"><span class="mc-ct">31–60 dias sem pedido</span></div></div>
       <div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Inativos/Perdidos</div><div class="mc-val">${cntInativos}</div><div class="mc-comp"><span class="mc-ct">mais de 60 dias sem pedido</span></div></div>
