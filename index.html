@@ -982,7 +982,7 @@ function haversine(lat1,lng1,lat2,lng2){
 
 let distSort='dist_asc';
 let _distBuckets=[];
-let tempoDistFilter='all';
+let tempoSort='dist_asc';
 let _tempoList=[];
 let inactiveSort='days_desc';
 let _inactiveList=[];
@@ -1024,15 +1024,15 @@ function sortDist(mode){
   });
 }
 
-function filterTempoBairros(){
+function renderTempoBairros(){
   const el=document.getElementById('tempoTable');
   if(!el)return;
-  const list=_tempoList.filter(v=>{
-    if(tempoDistFilter==='lte2')return v.dist!=null&&v.dist<=2;
-    if(tempoDistFilter==='2to5')return v.dist!=null&&v.dist>2&&v.dist<=5;
-    if(tempoDistFilter==='gt5')return v.dist!=null&&v.dist>5;
-    return true;
-  });
+  const sorted=[..._tempoList];
+  if(tempoSort==='dist_asc')sorted.sort((a,b)=>(a.dist??999)-(b.dist??999));
+  else if(tempoSort==='dist_desc')sorted.sort((a,b)=>(b.dist??-1)-(a.dist??-1));
+  else if(tempoSort==='count_asc')sorted.sort((a,b)=>a.count-b.count);
+  else if(tempoSort==='count_desc')sorted.sort((a,b)=>b.count-a.count);
+  const list=sorted.slice(0,20);
   const rows=list.map(v=>{
     const tc=v.avg<=40?'var(--green)':v.avg<=60?'var(--orange)':'var(--r)';
     const sc=v.pctSLA>=80?'var(--green)':v.pctSLA>=50?'var(--orange)':'var(--r)';
@@ -1041,17 +1041,17 @@ function filterTempoBairros(){
   }).join('');
   el.innerHTML=list.length
     ?`<div class="tw"><table><thead><tr><th>Bairro</th><th style="text-align:center">Dist (km)</th><th style="text-align:center">Pedidos c/ tempo</th><th style="text-align:center">Tempo médio</th><th style="text-align:center">Mín</th><th style="text-align:center">Máx</th><th style="text-align:center">SLA ≤60min</th></tr></thead><tbody>${rows}</tbody></table></div>`
-    :`<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">${_tempoList.length?'Nenhum bairro neste filtro de distância.':'Dados insuficientes — são necessários ao menos 3 registros de tempo por bairro'}</div>`;
-  document.querySelectorAll('.tempo-dist-btn').forEach(b=>{
-    const active=b.dataset.filter===tempoDistFilter;
+    :`<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Dados insuficientes — são necessários ao menos 3 registros de tempo por bairro</div>`;
+  document.querySelectorAll('.tempo-sort-btn').forEach(b=>{
+    const active=b.dataset.sort===tempoSort;
     b.style.background=active?'var(--blue)':'var(--bg3)';
     b.style.color=active?'#fff':'var(--txt2)';
   });
 }
 
-function setTempoDistFilter(mode){
-  tempoDistFilter=mode;
-  filterTempoBairros();
+function sortTempoBairros(mode){
+  tempoSort=mode;
+  renderTempoBairros();
 }
 
 function renderInactivePage(){
@@ -1215,11 +1215,11 @@ function pgBairros(){
     .sort((a,b)=>a.avg-b.avg)
     .slice(0,20);
   _tempoList=tempoList;
-  tempoDistFilter='all';
-  const tempoFilterBtns=[['all','Todos'],['lte2','≤2 km'],['2to5','2–5 km'],['gt5','>5 km']].map(([m,l])=>`<button class="tempo-dist-btn" data-filter="${m}" onclick="setTempoDistFilter('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===tempoDistFilter?'var(--blue)':'var(--bg3)'};color:${m===tempoDistFilter?'#fff':'var(--txt2)'}">${l}</button>`).join('');
+  tempoSort='dist_asc';
+  const tempoSortBtns=[['dist_asc','Distância ↑'],['dist_desc','Distância ↓'],['count_asc','Pedidos ↑'],['count_desc','Pedidos ↓']].map(([m,l])=>`<button class="tempo-sort-btn" data-sort="${m}" onclick="sortTempoBairros('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===tempoSort?'var(--blue)':'var(--bg3)'};color:${m===tempoSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
   const sortBtns=[['dist_asc','Distância ↑'],['dist_desc','Distância ↓'],['fat_asc','Faturamento ↑'],['fat_desc','Faturamento ↓']].map(([m,l])=>`<button class="dist-sort-btn" data-sort="${m}" onclick="sortDist('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===distSort?'var(--blue)':'var(--bg3)'};color:${m===distSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
-  mc.innerHTML=`<div class="g2" style="margin-bottom:14px"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div><div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Distribuição por distância da loja</div><div class="card-sub">Faixas de 0.5 km · linha reta até a Itta Pizzaria</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${sortBtns}</div></div><div id="distTable">${renderDistTable(_distBuckets,distSort)}</div></div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Tempo médio de entrega por bairro</div><div class="card-sub">created_at → updated_at · mín. 3 entregas com dado de tempo · top 20 mais rápidos</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${tempoFilterBtns}</div></div><div id="tempoTable"></div></div>`;
-  filterTempoBairros();
+  mc.innerHTML=`<div class="g2" style="margin-bottom:14px"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div><div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Distribuição por distância da loja</div><div class="card-sub">Faixas de 0.5 km · linha reta até a Itta Pizzaria</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${sortBtns}</div></div><div id="distTable">${renderDistTable(_distBuckets,distSort)}</div></div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Tempo médio de entrega por bairro</div><div class="card-sub">created_at → updated_at · mín. 3 entregas com dado de tempo · top 20 mais rápidos</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${tempoSortBtns}</div></div><div id="tempoTable"></div></div>`;
+  renderTempoBairros();
 }
 
 function pgClientes(){
