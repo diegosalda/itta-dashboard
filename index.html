@@ -513,20 +513,31 @@ async function load(){
       VRAW=VCMP.filter(d=>!d.cancel);
     }catch(e){console.log('Vendas err',e);}
 
-    // Bairros_Raw
+    // Bairros_Raw — paginated (5000 rows/chunk, API default limit is 1000)
     try{
-      const urlBr=BASE+encodeURIComponent('Bairros_Raw');
-      const respBr=await fetch(urlBr);
-      const txtBr=await respBr.text();
-      const jsonBr=JSON.parse(txtBr.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-      BAIRROS=jsonBr.table.rows.slice(1).map(r=>{
+      const CHUNK=5000;
+      let offset=0,allBrRows=[];
+      const parseBrRow=r=>{
         let dt='';
         const dv=r.c[1]?.v||'';
         if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
         else if(typeof dv==='string')dt=dv.substring(0,10);
         const st=String(r.c[10]?.v||'');
         return{id:String(r.c[0]?.v||''),data:dt,bairro:r.c[2]?.v||'',rua:r.c[3]?.v||'',numero:r.c[4]?.v||'',cep:r.c[5]?.v||'',complemento:r.c[6]?.v||'',referencia:r.c[7]?.v||'',taxaEntrega:parseFloat(r.c[8]?.v||0),valor:parseFloat(r.c[9]?.v||0),status:st,cancelado:st==='Cancelado',tempoEntrega:parseFloat(r.c[12]?.v||0)||0};
-      }).filter(d=>d.id);
+      };
+      while(true){
+        const tq=encodeURIComponent(`select * limit ${CHUNK} offset ${offset}`);
+        const urlBr=BASE+encodeURIComponent('Bairros_Raw')+'&tq='+tq;
+        const respBr=await fetch(urlBr);
+        const txtBr=await respBr.text();
+        const jsonBr=JSON.parse(txtBr.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+        const rows=jsonBr.table.rows||[];
+        if(!rows.length)break;
+        allBrRows=allBrRows.concat(rows);
+        if(rows.length<CHUNK)break;
+        offset+=CHUNK;
+      }
+      BAIRROS=allBrRows.map(parseBrRow).filter(d=>d.id);
       console.log('Bairros_Raw:',BAIRROS.length,'registros');
     }catch(e){console.log('Bairros err:',e);}
 
@@ -1027,19 +1038,23 @@ function sortDist(mode){
 function renderTempoBairros(){
   const el=document.getElementById('tempoTable');
   if(!el)return;
-  const sorted=[..._tempoList];
-  if(tempoSort==='dist_asc')sorted.sort((a,b)=>(a.dist??999)-(b.dist??999));
-  else if(tempoSort==='dist_desc')sorted.sort((a,b)=>(b.dist??-1)-(a.dist??-1));
-  else if(tempoSort==='count_asc')sorted.sort((a,b)=>a.count-b.count);
-  else if(tempoSort==='count_desc')sorted.sort((a,b)=>b.count-a.count);
-  const list=sorted.slice(0,20);
-  const rows=list.map(v=>{
+  const withDist=_tempoList.filter(v=>v.dist!=null);
+  const noDist=_tempoList.filter(v=>v.dist==null);
+  if(tempoSort==='dist_asc')withDist.sort((a,b)=>a.dist-b.dist);
+  else if(tempoSort==='dist_desc')withDist.sort((a,b)=>b.dist-a.dist);
+  else if(tempoSort==='count_asc'){withDist.sort((a,b)=>a.count-b.count);noDist.sort((a,b)=>a.count-b.count);}
+  else if(tempoSort==='count_desc'){withDist.sort((a,b)=>b.count-a.count);noDist.sort((a,b)=>b.count-a.count);}
+  const combined=[...withDist,...noDist].slice(0,20);
+  const renderRow=v=>{
     const tc=v.avg<=40?'var(--green)':v.avg<=60?'var(--orange)':'var(--r)';
     const sc=v.pctSLA>=80?'var(--green)':v.pctSLA>=50?'var(--orange)':'var(--r)';
-    const distStr=v.dist!=null?v.dist.toFixed(1)+' km':'–';
-    return`<tr><td style="font-weight:600">${v.bairro}</td><td style="color:var(--txt3);text-align:center">${distStr}</td><td style="text-align:center">${v.count}</td><td style="text-align:center;font-weight:700;color:${tc}">${v.avg} min</td><td style="text-align:center;color:var(--txt3)">${v.min}</td><td style="text-align:center;color:var(--txt3)">${v.max}</td><td style="text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${sc}22;color:${sc}">${v.pctSLA}%</span></td></tr>`;
-  }).join('');
-  el.innerHTML=list.length
+    const distCell=v.dist!=null
+      ?`<td style="color:var(--txt3);text-align:center">${v.dist.toFixed(1)} km</td>`
+      :`<td style="color:var(--txt3);text-align:center;cursor:help" title="Sem coordenada cadastrada">–</td>`;
+    return`<tr><td style="font-weight:600">${v.bairro}</td>${distCell}<td style="text-align:center">${v.count}</td><td style="text-align:center;font-weight:700;color:${tc}">${v.avg} min</td><td style="text-align:center;color:var(--txt3)">${v.min}</td><td style="text-align:center;color:var(--txt3)">${v.max}</td><td style="text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${sc}22;color:${sc}">${v.pctSLA}%</span></td></tr>`;
+  };
+  const rows=combined.map(renderRow).join('');
+  el.innerHTML=combined.length
     ?`<div class="tw"><table><thead><tr><th>Bairro</th><th style="text-align:center">Dist (km)</th><th style="text-align:center">Pedidos c/ tempo</th><th style="text-align:center">Tempo médio</th><th style="text-align:center">Mín</th><th style="text-align:center">Máx</th><th style="text-align:center">SLA ≤60min</th></tr></thead><tbody>${rows}</tbody></table></div>`
     :`<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Dados insuficientes — são necessários ao menos 3 registros de tempo por bairro</div>`;
   document.querySelectorAll('.tempo-sort-btn').forEach(b=>{
