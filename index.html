@@ -253,6 +253,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('horarios',this)"><span class="nav-icon">⏱</span>Horários</div>
       <div class="nav-item" onclick="goPage('dias',this)"><span class="nav-icon">📅</span>Dias da semana</div>
       <div class="nav-item" onclick="goPage('bairros',this)"><span class="nav-icon">📍</span>Bairros</div>
+      <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('tabela',this)"><span class="nav-icon">📋</span>Tabela completa</div>
@@ -332,13 +333,13 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={};
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -541,6 +542,23 @@ async function load(){
       console.log('CEPs_Coords:',Object.keys(COORDS).length,'bairros');
     }catch(e){console.log('Coords err:',e);}
 
+    // Clientes_Raw
+    try{
+      const urlCl=BASE+encodeURIComponent('Clientes_Raw');
+      const respCl=await fetch(urlCl);
+      const txtCl=await respCl.text();
+      const jsonCl=JSON.parse(txtCl.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      CLIENTES=jsonCl.table.rows.slice(1).map(r=>{
+        let dt='';
+        const dv=r.c[1]?.v||'';
+        if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
+        else if(typeof dv==='string')dt=dv.substring(0,10);
+        const st=String(r.c[9]?.v||'');
+        return{idPedido:String(r.c[0]?.v||''),data:dt,idCliente:String(r.c[2]?.v||''),nome:r.c[3]?.v||'',telefone:r.c[4]?.v||'',email:r.c[5]?.v||'',aniversario:r.c[6]?.v||'',canal:r.c[7]?.v||'',valor:parseFloat(r.c[8]?.v||0),status:st,cancelado:st==='Cancelado'};
+      }).filter(d=>d.idPedido||d.idCliente);
+      console.log('Clientes_Raw:',CLIENTES.length,'registros');
+    }catch(e){console.log('Clientes err:',e);}
+
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
@@ -617,6 +635,7 @@ function aplicar(){
     else if(PAGE==='horarios')pgHorarios(at,an);
     else if(PAGE==='dias')pgDias(at,an,i,f,ci,cf);
     else if(PAGE==='bairros')pgBairros();
+    else if(PAGE==='clientes')pgClientes();
     else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -1017,6 +1036,89 @@ function pgBairros(){
   _distBuckets=Object.entries(buckets);
   const sortBtns=[['dist_asc','Distância ↑'],['dist_desc','Distância ↓'],['fat_asc','Faturamento ↑'],['fat_desc','Faturamento ↓']].map(([m,l])=>`<button class="dist-sort-btn" data-sort="${m}" onclick="sortDist('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===distSort?'var(--blue)':'var(--bg3)'};color:${m===distSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
   mc.innerHTML=`<div class="g2" style="margin-bottom:14px"><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por pedidos</div><div class="card-sub">Top 15 bairros · ${totalPedidos} pedidos no período</div></div></div>${leftRows}</div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Ranking por faturamento</div><div class="card-sub">Top 15 bairros · faturamento acumulado</div></div></div>${rightRows}</div></div><div class="card"><div class="card-hdr"><div><div class="card-ttl">Distribuição por distância da loja</div><div class="card-sub">Faixas de 0.5 km · linha reta até a Itta Pizzaria</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${sortBtns}</div></div><div id="distTable">${renderDistTable(_distBuckets,distSort)}</div></div>`;
+}
+
+function pgClientes(){
+  const{i,f}=calcP();
+  const is=ds(i),fs=ds(f);
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  if(!CLIENTES.length){mc.innerHTML='<div class="loading">Dados de clientes não disponíveis.</div>';return;}
+  const dados=CLIENTES.filter(d=>d.data>=is&&d.data<=fs&&!d.cancelado);
+  if(!dados.length){mc.innerHTML='<div class="loading">Sem dados para o período selecionado.</div>';return;}
+
+  // Group by client for the period
+  const mapa={};
+  dados.forEach(d=>{
+    const id=d.idCliente||d.nome||'Desconhecido';
+    if(!mapa[id])mapa[id]={nome:d.nome||id,pedidos:0,faturamento:0,lastDate:'',canal:d.canal,key:id};
+    mapa[id].pedidos++;
+    mapa[id].faturamento+=d.valor||0;
+    if(d.data>mapa[id].lastDate){mapa[id].lastDate=d.data;mapa[id].canal=d.canal;}
+  });
+  const cList=Object.values(mapa);
+  const totalUnicos=cList.length;
+  const totalFat=cList.reduce((s,v)=>s+v.faturamento,0);
+  const recorrentes=cList.filter(v=>v.pedidos>=2).length;
+  const pctRec=totalUnicos>0?Math.round(recorrentes/totalUnicos*100):0;
+  const ticketPorCliente=totalUnicos>0?totalFat/totalUnicos:0;
+  const melhor=[...cList].sort((a,b)=>b.pedidos-a.pedidos)[0];
+
+  // Rankings
+  const byPed=[...cList].sort((a,b)=>b.pedidos-a.pedidos).slice(0,15);
+  const byFat=[...cList].sort((a,b)=>b.faturamento-a.faturamento).slice(0,15);
+  const maxPed=byPed[0]?.pedidos||1;
+  const maxFat=byFat[0]?.faturamento||1;
+
+  const pedRows=byPed.map((v,idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.pedidos/maxPed*100);
+    const lastFmt=v.lastDate?v.lastDate.substring(5).replace('-','/'):'–';
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${fmtR(v.faturamento)} · último: ${lastFmt} · ${v.canal||'–'}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%"></div></div></div><div class="ri-qtd">${v.pedidos}</div></div>`;
+  }).join('');
+
+  const fatRows=byFat.map((v,idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.faturamento/maxFat*100);
+    const avg=v.pedidos>0?v.faturamento/v.pedidos:0;
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${v.pedidos} pedidos · ticket ${fmtR(avg)}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div></div><div class="ri-qtd" style="font-size:11px;color:var(--green)">${fmtR(v.faturamento)}</div></div>`;
+  }).join('');
+
+  // Inactive clients — last order > 30 days ago, not in current period
+  const today=new Date();
+  const cutoff=new Date(today);cutoff.setDate(cutoff.getDate()-30);
+  const cutoffStr=ds(cutoff);
+  const activePeriodKeys=new Set(dados.map(d=>d.idCliente||d.nome||'Desconhecido'));
+  const histMap={};
+  CLIENTES.filter(d=>!d.cancelado).forEach(d=>{
+    const id=d.idCliente||d.nome||'Desconhecido';
+    if(!histMap[id])histMap[id]={nome:d.nome||id,pedidos:0,faturamento:0,lastDate:'',key:id};
+    histMap[id].pedidos++;
+    histMap[id].faturamento+=d.valor||0;
+    if(d.data>histMap[id].lastDate)histMap[id].lastDate=d.data;
+  });
+  const inactive=Object.values(histMap)
+    .filter(v=>v.lastDate&&v.lastDate<cutoffStr&&!activePeriodKeys.has(v.key))
+    .sort((a,b)=>a.lastDate<b.lastDate?1:-1)
+    .slice(0,20);
+  const inactiveRows=inactive.length?inactive.map(v=>{
+    const days=Math.floor((today-new Date(v.lastDate+'T12:00:00'))/(1000*60*60*24));
+    const lastFmt=v.lastDate.substring(5).replace('-','/');
+    return`<tr><td style="font-weight:600">${v.nome}</td><td style="color:var(--txt3)">${lastFmt}</td><td style="color:var(--orange);font-weight:700">${days} dias</td><td style="text-align:center">${v.pedidos}</td><td style="text-align:right;color:var(--green);font-weight:700">${fmtR(v.faturamento)}</td></tr>`;
+  }).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Nenhum cliente inativo encontrado.</td></tr>`;
+
+  mc.innerHTML=`
+    <div class="metrics">
+      <div class="mc blue"><div class="mc-icon">👥</div><div class="mc-lbl">Clientes únicos</div><div class="mc-val">${totalUnicos}</div><div class="mc-comp"><span class="mc-ct">${dados.length} pedidos no período</span></div></div>
+      <div class="mc purple"><div class="mc-icon">🔄</div><div class="mc-lbl">Recorrentes</div><div class="mc-val">${recorrentes}</div><div class="mc-comp"><span class="mc-ct">${pctRec}% dos clientes</span></div></div>
+      <div class="mc green"><div class="mc-icon">🎯</div><div class="mc-lbl">Ticket médio / cliente</div><div class="mc-val" style="font-size:20px">${fmtR(ticketPorCliente)}</div><div class="mc-comp"><span class="mc-ct">total: ${fmtR(totalFat)}</span></div></div>
+      <div class="mc orange"><div class="mc-icon">⭐</div><div class="mc-lbl">Melhor cliente</div><div class="mc-val" style="font-size:15px;line-height:1.3">${melhor?.nome||'–'}</div><div class="mc-comp"><span class="mc-ct">${melhor?.pedidos||0} pedidos · ${fmtR(melhor?.faturamento||0)}</span></div></div>
+    </div>
+    <div class="g2" style="margin-bottom:14px">
+      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por pedidos</div><div class="card-sub">Clientes mais frequentes no período</div></div></div>${pedRows}</div>
+      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por faturamento</div><div class="card-sub">Clientes por valor gasto no período</div></div></div>${fatRows}</div>
+    </div>
+    <div class="card"><div class="card-hdr"><div><div class="card-ttl">Clientes inativos</div><div class="card-sub">Último pedido há mais de 30 dias · sem pedidos no período selecionado · top 20</div></div></div><div class="tw"><table><thead><tr><th>Nome</th><th>Último pedido</th><th>Inativo há</th><th style="text-align:center">Pedidos (total)</th><th style="text-align:right">Total gasto</th></tr></thead><tbody>${inactiveRows}</tbody></table></div></div>`;
 }
 
 function pgTabela(at,an){
