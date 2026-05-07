@@ -984,6 +984,12 @@ let inactiveSort='days_desc';
 let _inactiveList=[];
 let inactivePage=0;
 const INACTIVE_PAGE_SIZE=20;
+let clienteSearch='';
+let _byPed=[];
+let _byFat=[];
+let cupomSearch='';
+let _cupomRanking=[];
+let _cupomMaxUsos=1;
 
 function renderDistTable(bucketList,sort){
   const sorted=[...bucketList];
@@ -1025,11 +1031,12 @@ function renderInactivePage(){
   else if(inactiveSort==='orders_desc')sorted.sort((a,b)=>b.pedidos-a.pedidos);
   else if(inactiveSort==='spent_desc')sorted.sort((a,b)=>b.faturamento-a.faturamento);
   const today=new Date();
-  const total=sorted.length;
+  const filtered=clienteSearch?sorted.filter(v=>v.nome.toLowerCase().includes(clienteSearch)):sorted;
+  const total=filtered.length;
   const pages=Math.ceil(total/INACTIVE_PAGE_SIZE)||1;
   const start=inactivePage*INACTIVE_PAGE_SIZE;
   const end=Math.min(start+INACTIVE_PAGE_SIZE,total);
-  const page=sorted.slice(start,end);
+  const page=filtered.slice(start,end);
   const rows=page.length?page.map(v=>{
     const days=Math.floor((today-new Date(v.lastDate+'T12:00:00'))/(1000*60*60*24));
     const lastFmt=v.lastDate.substring(5).replace('-','/');
@@ -1066,6 +1073,46 @@ function nextInactivePage(){
 function toggleClienteHelp(){
   const tip=document.getElementById('clienteHelpTip');
   if(tip)tip.style.display=tip.style.display==='none'?'block':'none';
+}
+
+function renderClienteRankings(){
+  const q=clienteSearch;
+  const maxPed=_byPed[0]?.pedidos||1;
+  const maxFat=_byFat[0]?.faturamento||1;
+  const filtPed=q?_byPed.filter(v=>v.nome.toLowerCase().includes(q)):_byPed;
+  const filtFat=q?_byFat.filter(v=>v.nome.toLowerCase().includes(q)):_byFat;
+  const empty='<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Nenhum cliente encontrado.</div>';
+  const elPed=document.getElementById('clientePedRows');
+  const elFat=document.getElementById('clienteFatRows');
+  if(elPed)elPed.innerHTML=filtPed.length?filtPed.map((v,idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.pedidos/maxPed*100);
+    const lastFmt=v.lastDate?v.lastDate.substring(5).replace('-','/'):'–';
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${fmtR(v.faturamento)} · último: ${lastFmt} · ${v.canal||'–'}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%"></div></div></div><div class="ri-qtd">${v.pedidos}</div></div>`;
+  }).join(''):empty;
+  if(elFat)elFat.innerHTML=filtFat.length?filtFat.map((v,idx)=>{
+    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
+    const pct=Math.round(v.faturamento/maxFat*100);
+    const avg=v.pedidos>0?v.faturamento/v.pedidos:0;
+    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${v.pedidos} pedidos · ticket ${fmtR(avg)}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div></div><div class="ri-qtd" style="font-size:11px;color:var(--green)">${fmtR(v.faturamento)}</div></div>`;
+  }).join(''):empty;
+}
+
+function renderCupomRanking(){
+  const q=cupomSearch;
+  const list=q?_cupomRanking.filter(v=>v.cupom.toLowerCase().includes(q)):_cupomRanking;
+  const el=document.getElementById('cupomRankingBody');
+  if(!el)return;
+  if(!list.length){el.innerHTML='<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Nenhum cupom encontrado.</div>';return;}
+  const thead=`<thead><tr><th style="text-align:center">#</th><th>Cupom</th><th>Tipo</th><th style="text-align:center">Usos</th><th style="text-align:right">Valor vendas</th><th style="text-align:right">Desconto total</th><th style="text-align:right">Ticket médio</th><th></th></tr></thead>`;
+  const rows=list.map((v,i)=>{
+    const pct=Math.round(v.usos/_cupomMaxUsos*100);
+    const ticket=v.usos>0?v.valorTotal/v.usos:0;
+    const t=v.tipo;const c=t==='%'?'var(--purple)':t==='R$'?'var(--green)':'var(--blue)';
+    const badge=t?`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:${c}22;color:${c}">${t}</span>`:'';
+    return`<tr><td style="color:var(--txt3);text-align:center">${i+1}</td><td style="font-weight:600">${v.cupom}</td><td>${badge}</td><td style="text-align:center;font-weight:700">${v.usos}</td><td style="text-align:right;color:var(--green)">${fmtR(v.valorTotal)}</td><td style="text-align:right;color:var(--r);font-weight:700">${fmtR(v.descontoTotal)}</td><td style="text-align:right;color:var(--txt2)">${fmtR(ticket)}</td><td style="width:80px"><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div></td></tr>`;
+  }).join('');
+  el.innerHTML=`<div class="tw"><table>${thead}<tbody>${rows}</tbody></table></div>`;
 }
 
 function pgBairros(){
@@ -1142,24 +1189,9 @@ function pgClientes(){
   const melhor=[...cList].sort((a,b)=>b.pedidos-a.pedidos)[0];
 
   // Rankings
-  const byPed=[...cList].sort((a,b)=>b.pedidos-a.pedidos).slice(0,15);
-  const byFat=[...cList].sort((a,b)=>b.faturamento-a.faturamento).slice(0,15);
-  const maxPed=byPed[0]?.pedidos||1;
-  const maxFat=byFat[0]?.faturamento||1;
-
-  const pedRows=byPed.map((v,idx)=>{
-    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
-    const pct=Math.round(v.pedidos/maxPed*100);
-    const lastFmt=v.lastDate?v.lastDate.substring(5).replace('-','/'):'–';
-    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${fmtR(v.faturamento)} · último: ${lastFmt} · ${v.canal||'–'}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%"></div></div></div><div class="ri-qtd">${v.pedidos}</div></div>`;
-  }).join('');
-
-  const fatRows=byFat.map((v,idx)=>{
-    const cls=idx===0?'g1':idx===1?'g2':idx===2?'g3':'';
-    const pct=Math.round(v.faturamento/maxFat*100);
-    const avg=v.pedidos>0?v.faturamento/v.pedidos:0;
-    return`<div class="ri"><div class="ri-pos ${cls}">${idx+1}</div><div class="ri-info"><div class="ri-nome">${v.nome}</div><div style="font-size:9px;color:var(--txt3);margin-top:2px">${v.pedidos} pedidos · ticket ${fmtR(avg)}</div><div class="ri-bar"><div class="ri-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div></div><div class="ri-qtd" style="font-size:11px;color:var(--green)">${fmtR(v.faturamento)}</div></div>`;
-  }).join('');
+  _byPed=[...cList].sort((a,b)=>b.pedidos-a.pedidos).slice(0,15);
+  _byFat=[...cList].sort((a,b)=>b.faturamento-a.faturamento).slice(0,15);
+  clienteSearch='';
 
   // Full client history — classification and LTV
   const today=new Date();
@@ -1213,9 +1245,10 @@ function pgClientes(){
       <div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Inativos/Perdidos</div><div class="mc-val">${cntInativos}</div><div class="mc-comp"><span class="mc-ct">mais de 60 dias sem pedido</span></div></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">LTV — Lifetime Value</div><div class="card-sub">Valor anualizado estimado por cliente · apenas clientes recorrentes (≥2 pedidos)</div></div></div><div style="display:flex;gap:24px;flex-wrap:wrap"><div style="flex:1;min-width:160px"><div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LTV médio</div><div style="font-size:28px;font-weight:800;color:var(--green)">${fmtR(avgLTV)}<span style="font-size:11px;color:var(--txt3);font-weight:400">/ano</span></div><div style="font-size:10px;color:var(--txt3);margin-top:4px">Freq. média: a cada ${Math.round(avgDaysBetween)||'–'} dias</div></div><div style="flex:2;min-width:200px"><div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Top clientes por LTV</div>${top3LTVHtml}</div></div></div>
+    <input type="text" id="clienteSearchInput" placeholder="Buscar cliente..." oninput="clienteSearch=this.value.toLowerCase();renderClienteRankings();inactivePage=0;renderInactivePage()" style="font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt);font-family:inherit;outline:none;width:200px;margin-bottom:10px">
     <div class="g2" style="margin-bottom:14px">
-      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por pedidos</div><div class="card-sub">Clientes mais frequentes no período</div></div></div>${pedRows}</div>
-      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por faturamento</div><div class="card-sub">Clientes por valor gasto no período</div></div></div>${fatRows}</div>
+      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por pedidos</div><div class="card-sub">Clientes mais frequentes no período</div></div></div><div id="clientePedRows"></div></div>
+      <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por faturamento</div><div class="card-sub">Clientes por valor gasto no período</div></div></div><div id="clienteFatRows"></div></div>
     </div>
     <div class="card"><div class="card-hdr"><div><div class="card-ttl">Clientes em risco e inativos</div><div class="card-sub">Último pedido há mais de 30 dias · sem pedidos no período selecionado</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${inactiveSortBtns}</div></div><div id="inactiveTable"></div></div>`;
   const pttl=document.getElementById('pttl');
@@ -1223,6 +1256,7 @@ function pgClientes(){
     pttl.style.cssText+='position:relative;display:inline-flex;align-items:center;gap:6px;';
     pttl.innerHTML=`Clientes <button onclick="toggleClienteHelp()" style="width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;padding:0;flex-shrink:0">?</button><div id="clienteHelpTip" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:500;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:14px 16px;min-width:290px;max-width:320px;font-size:12px;line-height:1.6;white-space:normal"><div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--txt)">Classificação de clientes</div><div style="color:var(--txt2)">✅ <b>Ativo:</b> último pedido nos últimos 30 dias</div><div style="color:var(--txt2);margin-top:4px">⚠️ <b>Em risco:</b> último pedido entre 31 e 60 dias atrás</div><div style="color:var(--txt2);margin-top:4px">❌ <b>Inativo/Perdido:</b> último pedido há mais de 60 dias</div><div style="color:var(--txt2);margin-top:4px">🆕 <b>Novo:</b> primeiro pedido histórico no período selecionado</div><div style="color:var(--txt2);margin-top:4px">💰 <b>LTV:</b> valor médio anualizado gerado por cliente (ticket médio × frequência mensal × 12)</div></div>`;
   }
+  renderClienteRankings();
   renderInactivePage();
 }
 
@@ -1254,6 +1288,9 @@ function pgCupons(){
   const totalDesconto=dados.reduce((s,d)=>s+d.descontoTotal,0);
   const maisUsado=ranking[0];
   const maxUsos=ranking[0]?.usos||1;
+  _cupomRanking=ranking;
+  _cupomMaxUsos=maxUsos;
+  cupomSearch='';
 
   function tipoBadge(t){
     const c=t==='%'?'var(--purple)':t==='R$'?'var(--green)':'var(--blue)';
@@ -1277,8 +1314,9 @@ function pgCupons(){
       <div class="mc red"><div class="mc-icon">💸</div><div class="mc-lbl">Desconto total concedido</div><div class="mc-val" style="font-size:20px">${fmtR(totalDesconto)}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
       <div class="mc orange"><div class="mc-icon">🏆</div><div class="mc-lbl">Cupom mais usado</div><div class="mc-val" style="font-size:16px;line-height:1.2">${maisUsado?.cupom||'–'}</div><div class="mc-comp"><span class="mc-ct">${maisUsado?.usos||0} usos no período</span></div></div>
     </div>
-    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Ranking de cupons no período</div><div class="card-sub">${ranking.length} cupons · ${totalUsos} usos entre ${is.substring(5).replace('-','/')} e ${fs.substring(5).replace('-','/')}</div></div></div>${ranking.length?`<div class="tw"><table>${thead}<tbody>${rankRows(ranking,maxUsos)}</tbody></table></div>`:'<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Nenhum cupom usado no período selecionado.</div>'}</div>
+    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Ranking de cupons no período</div><div class="card-sub">${ranking.length} cupons · ${totalUsos} usos entre ${is.substring(5).replace('-','/')} e ${fs.substring(5).replace('-','/')}</div></div><input type="text" placeholder="Buscar cupom..." oninput="cupomSearch=this.value.toLowerCase();renderCupomRanking()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt);font-family:inherit;outline:none;width:160px"></div><div id="cupomRankingBody"></div></div>
     <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 10 histórico (todos os tempos)</div><div class="card-sub">${historico.length} cupons distintos · histórico completo</div></div></div><div class="tw"><table>${thead}<tbody>${rankRows(historico.slice(0,10),maxH)}</tbody></table></div></div>`;
+  renderCupomRanking();
 }
 
 function pgTabela(at,an){
