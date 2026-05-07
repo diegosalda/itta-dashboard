@@ -1177,11 +1177,13 @@ function pgClientes(){
   inactivePage=0;
   const inactiveSortBtns=[['last_asc','Último pedido ↑'],['last_desc','Último pedido ↓'],['days_asc','Inativo há ↑'],['days_desc','Inativo há ↓'],['orders_desc','Pedidos ↓'],['spent_desc','Total gasto ↓']].map(([m,l])=>`<button class="inactive-sort-btn" data-sort="${m}" onclick="sortInactive('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===inactiveSort?'var(--blue)':'var(--bg3)'};color:${m===inactiveSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
   const top3LTVHtml=top3LTV.map((v,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;${i<top3LTV.length-1?'border-bottom:1px solid var(--border)':''}"><span style="font-size:11px;color:var(--txt2);font-weight:600">${v.nome}</span><span style="font-size:11px;color:var(--green);font-weight:700">${fmtR(v.ltv)}/ano</span></div>`).join('')||'<div style="color:var(--txt3);font-size:11px">Dados insuficientes</div>';
+  const pedidosVHIST=VHIST.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado).length;
+  const semCadastro=Math.max(pedidosVHIST-dados.length,0);
 
   mc.innerHTML=`
     <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Período selecionado</div>
     <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:0">
-      <div class="mc blue"><div class="mc-icon">👥</div><div class="mc-lbl">Clientes no período</div><div class="mc-val">${totalUnicos}</div><div class="mc-comp"><span class="mc-ct">${dados.length} pedidos no período</span></div></div>
+      <div class="mc blue"><div class="mc-icon">👥</div><div class="mc-lbl">Clientes no período</div><div class="mc-val">${totalUnicos}</div><div class="mc-comp"><span class="mc-ct">${dados.length} pedidos identificados${semCadastro>0?' · '+semCadastro+' sem cadastro':''}</span></div></div>
       <div class="mc green"><div class="mc-icon">🆕</div><div class="mc-lbl">Novos clientes</div><div class="mc-val">${cntNovos}</div><div class="mc-comp"><span class="mc-ct">${totalUnicos>0?Math.round(cntNovos/totalUnicos*100):0}% dos clientes do período</span></div></div>
       <div class="mc purple"><div class="mc-icon">🔄</div><div class="mc-lbl">Clientes recorrentes</div><div class="mc-val">${totalUnicos-cntNovos}</div><div class="mc-comp"><span class="mc-ct">${totalUnicos>0?Math.round((totalUnicos-cntNovos)/totalUnicos*100):0}% dos clientes do período</span></div></div>
     </div>
