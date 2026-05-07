@@ -254,6 +254,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('dias',this)"><span class="nav-icon">📅</span>Dias da semana</div>
       <div class="nav-item" onclick="goPage('bairros',this)"><span class="nav-icon">📍</span>Bairros</div>
       <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
+      <div class="nav-item" onclick="goPage('cupons',this)"><span class="nav-icon">🎟️</span>Cupons</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('tabela',this)"><span class="nav-icon">📋</span>Tabela completa</div>
@@ -333,13 +334,13 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -559,6 +560,23 @@ async function load(){
       console.log('Clientes_Raw:',CLIENTES.length,'registros');
     }catch(e){console.log('Clientes err:',e);}
 
+    // Cupons_Raw
+    try{
+      const urlCup=BASE+encodeURIComponent('Cupons_Raw');
+      const respCup=await fetch(urlCup);
+      const txtCup=await respCup.text();
+      const jsonCup=JSON.parse(txtCup.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      CUPONS=jsonCup.table.rows.slice(1).map(r=>{
+        let dt='';
+        const dv=r.c[1]?.v||'';
+        if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
+        else if(typeof dv==='string')dt=dv.substring(0,10);
+        const st=String(r.c[8]?.v||'');
+        return{idPedido:String(r.c[0]?.v||''),data:dt,cupom:String(r.c[2]?.v||''),tipo:String(r.c[3]?.v||''),desconto:parseFloat(r.c[4]?.v||0),valorTotal:parseFloat(r.c[5]?.v||0),descontoTotal:parseFloat(r.c[6]?.v||0),canal:String(r.c[7]?.v||''),cancelado:st==='Cancelado'};
+      }).filter(d=>d.cupom);
+      console.log('Cupons_Raw:',CUPONS.length,'registros');
+    }catch(e){console.log('Cupons err:',e);}
+
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
@@ -636,6 +654,7 @@ function aplicar(){
     else if(PAGE==='dias')pgDias(at,an,i,f,ci,cf);
     else if(PAGE==='bairros')pgBairros();
     else if(PAGE==='clientes')pgClientes();
+    else if(PAGE==='cupons')pgCupons();
     else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -1205,6 +1224,61 @@ function pgClientes(){
     pttl.innerHTML=`Clientes <button onclick="toggleClienteHelp()" style="width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;padding:0;flex-shrink:0">?</button><div id="clienteHelpTip" style="display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:500;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:14px 16px;min-width:290px;max-width:320px;font-size:12px;line-height:1.6;white-space:normal"><div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--txt)">Classificação de clientes</div><div style="color:var(--txt2)">✅ <b>Ativo:</b> último pedido nos últimos 30 dias</div><div style="color:var(--txt2);margin-top:4px">⚠️ <b>Em risco:</b> último pedido entre 31 e 60 dias atrás</div><div style="color:var(--txt2);margin-top:4px">❌ <b>Inativo/Perdido:</b> último pedido há mais de 60 dias</div><div style="color:var(--txt2);margin-top:4px">🆕 <b>Novo:</b> primeiro pedido histórico no período selecionado</div><div style="color:var(--txt2);margin-top:4px">💰 <b>LTV:</b> valor médio anualizado gerado por cliente (ticket médio × frequência mensal × 12)</div></div>`;
   }
   renderInactivePage();
+}
+
+function pgCupons(){
+  const{i,f}=calcP();
+  const is=ds(i),fs=ds(f);
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  if(!CUPONS.length){mc.innerHTML='<div class="loading">Dados de cupons não disponíveis.</div>';return;}
+
+  function groupByCupom(list){
+    const m={};
+    list.forEach(d=>{
+      const k=d.cupom||'(sem nome)';
+      if(!m[k])m[k]={cupom:k,tipo:d.tipo,usos:0,valorTotal:0,descontoTotal:0};
+      m[k].usos++;
+      m[k].valorTotal+=d.valorTotal||0;
+      m[k].descontoTotal+=d.descontoTotal||0;
+      if(d.tipo&&!m[k].tipo)m[k].tipo=d.tipo;
+    });
+    return Object.values(m).sort((a,b)=>b.usos-a.usos);
+  }
+
+  const dados=CUPONS.filter(d=>d.data>=is&&d.data<=fs&&!d.cancelado);
+  const ranking=groupByCupom(dados);
+  const historico=groupByCupom(CUPONS.filter(d=>!d.cancelado));
+
+  const totalUsos=dados.length;
+  const totalDesconto=dados.reduce((s,d)=>s+d.descontoTotal,0);
+  const maisUsado=ranking[0];
+  const maxUsos=ranking[0]?.usos||1;
+
+  function tipoBadge(t){
+    const c=t==='%'?'var(--purple)':t==='R$'?'var(--green)':'var(--blue)';
+    return t?`<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:${c}22;color:${c}">${t}</span>`:'';
+  }
+
+  function rankRows(list,maxU){
+    return list.map((v,i)=>{
+      const pct=Math.round(v.usos/maxU*100);
+      const ticket=v.usos>0?v.valorTotal/v.usos:0;
+      return`<tr><td style="color:var(--txt3);text-align:center">${i+1}</td><td style="font-weight:600">${v.cupom}</td><td>${tipoBadge(v.tipo)}</td><td style="text-align:center;font-weight:700">${v.usos}</td><td style="text-align:right;color:var(--green)">${fmtR(v.valorTotal)}</td><td style="text-align:right;color:var(--r);font-weight:700">${fmtR(v.descontoTotal)}</td><td style="text-align:right;color:var(--txt2)">${fmtR(ticket)}</td><td style="width:80px"><div style="height:4px;background:var(--bg3);border-radius:2px"><div style="width:${pct}%;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div></td></tr>`;
+    }).join('');
+  }
+
+  const thead=`<thead><tr><th style="text-align:center">#</th><th>Cupom</th><th>Tipo</th><th style="text-align:center">Usos</th><th style="text-align:right">Valor vendas</th><th style="text-align:right">Desconto total</th><th style="text-align:right">Ticket médio</th><th></th></tr></thead>`;
+  const maxH=historico[0]?.usos||1;
+
+  mc.innerHTML=`
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="mc blue"><div class="mc-icon">🎟️</div><div class="mc-lbl">Total de usos no período</div><div class="mc-val">${totalUsos}</div><div class="mc-comp"><span class="mc-ct">${ranking.length} cupons distintos</span></div></div>
+      <div class="mc red"><div class="mc-icon">💸</div><div class="mc-lbl">Desconto total concedido</div><div class="mc-val" style="font-size:20px">${fmtR(totalDesconto)}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
+      <div class="mc orange"><div class="mc-icon">🏆</div><div class="mc-lbl">Cupom mais usado</div><div class="mc-val" style="font-size:16px;line-height:1.2">${maisUsado?.cupom||'–'}</div><div class="mc-comp"><span class="mc-ct">${maisUsado?.usos||0} usos no período</span></div></div>
+    </div>
+    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Ranking de cupons no período</div><div class="card-sub">${ranking.length} cupons · ${totalUsos} usos entre ${is.substring(5).replace('-','/')} e ${fs.substring(5).replace('-','/')}</div></div></div>${ranking.length?`<div class="tw"><table>${thead}<tbody>${rankRows(ranking,maxUsos)}</tbody></table></div>`:'<div style="color:var(--txt3);font-size:12px;padding:20px 0;text-align:center">Nenhum cupom usado no período selecionado.</div>'}</div>
+    <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 10 histórico (todos os tempos)</div><div class="card-sub">${historico.length} cupons distintos · histórico completo</div></div></div><div class="tw"><table>${thead}<tbody>${rankRows(historico.slice(0,10),maxH)}</tbody></table></div></div>`;
 }
 
 function pgTabela(at,an){
