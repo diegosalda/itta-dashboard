@@ -961,6 +961,10 @@ function haversine(lat1,lng1,lat2,lng2){
 
 let distSort='dist_asc';
 let _distBuckets=[];
+let inactiveSort='days_desc';
+let _inactiveList=[];
+let inactivePage=0;
+const INACTIVE_PAGE_SIZE=20;
 
 function renderDistTable(bucketList,sort){
   const sorted=[...bucketList];
@@ -989,6 +993,52 @@ function sortDist(mode){
     b.style.background=active?'var(--blue)':'var(--bg3)';
     b.style.color=active?'#fff':'var(--txt2)';
   });
+}
+
+function renderInactivePage(){
+  const el=document.getElementById('inactiveTable');
+  if(!el)return;
+  const sorted=[..._inactiveList];
+  if(inactiveSort==='last_asc')sorted.sort((a,b)=>b.lastDate.localeCompare(a.lastDate));
+  else if(inactiveSort==='last_desc')sorted.sort((a,b)=>a.lastDate.localeCompare(b.lastDate));
+  else if(inactiveSort==='days_asc')sorted.sort((a,b)=>b.lastDate.localeCompare(a.lastDate));
+  else if(inactiveSort==='days_desc')sorted.sort((a,b)=>a.lastDate.localeCompare(b.lastDate));
+  else if(inactiveSort==='orders_desc')sorted.sort((a,b)=>b.pedidos-a.pedidos);
+  else if(inactiveSort==='spent_desc')sorted.sort((a,b)=>b.faturamento-a.faturamento);
+  const today=new Date();
+  const total=sorted.length;
+  const pages=Math.ceil(total/INACTIVE_PAGE_SIZE)||1;
+  const start=inactivePage*INACTIVE_PAGE_SIZE;
+  const end=Math.min(start+INACTIVE_PAGE_SIZE,total);
+  const page=sorted.slice(start,end);
+  const rows=page.length?page.map(v=>{
+    const days=Math.floor((today-new Date(v.lastDate+'T12:00:00'))/(1000*60*60*24));
+    const lastFmt=v.lastDate.substring(5).replace('-','/');
+    return`<tr><td style="font-weight:600">${v.nome}</td><td style="color:var(--txt3)">${lastFmt}</td><td style="color:var(--orange);font-weight:700">${days} dias</td><td style="text-align:center">${v.pedidos}</td><td style="text-align:right;color:var(--green);font-weight:700">${fmtR(v.faturamento)}</td></tr>`;
+  }).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Nenhum cliente inativo encontrado.</td></tr>`;
+  const prevDis=inactivePage===0?'disabled':'';
+  const nextDis=inactivePage>=pages-1?'disabled':'';
+  el.innerHTML=`<div class="tw"><table><thead><tr><th>Nome</th><th>Último pedido</th><th>Inativo há</th><th style="text-align:center">Pedidos (total)</th><th style="text-align:right">Total gasto</th></tr></thead><tbody>${rows}</tbody></table></div><div style="display:flex;align-items:center;gap:10px;padding:12px 0 4px;flex-wrap:wrap"><button onclick="prevInactivePage()" ${prevDis} style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:none;cursor:${inactivePage===0?'default':'pointer'};font-family:inherit;background:var(--bg3);color:var(--txt${inactivePage===0?'3':'2'})">Anterior</button><span style="font-size:12px;color:var(--txt2);font-weight:600">${inactivePage+1} de ${pages}</span><button onclick="nextInactivePage()" ${nextDis} style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;border:none;cursor:${inactivePage>=pages-1?'default':'pointer'};font-family:inherit;background:var(--bg3);color:var(--txt${inactivePage>=pages-1?'3':'2'})">Próxima</button><span style="font-size:11px;color:var(--txt3)">Mostrando ${start+1}–${end} de ${total} clientes</span></div>`;
+  document.querySelectorAll('.inactive-sort-btn').forEach(b=>{
+    const active=b.dataset.sort===inactiveSort;
+    b.style.background=active?'var(--blue)':'var(--bg3)';
+    b.style.color=active?'#fff':'var(--txt2)';
+  });
+}
+
+function sortInactive(mode){
+  inactiveSort=mode;
+  inactivePage=0;
+  renderInactivePage();
+}
+
+function prevInactivePage(){
+  if(inactivePage>0){inactivePage--;renderInactivePage();}
+}
+
+function nextInactivePage(){
+  const pages=Math.ceil(_inactiveList.length/INACTIVE_PAGE_SIZE)||1;
+  if(inactivePage<pages-1){inactivePage++;renderInactivePage();}
 }
 
 function pgBairros(){
@@ -1097,15 +1147,10 @@ function pgClientes(){
     histMap[id].faturamento+=d.valor||0;
     if(d.data>histMap[id].lastDate)histMap[id].lastDate=d.data;
   });
-  const inactive=Object.values(histMap)
-    .filter(v=>v.lastDate&&v.lastDate<cutoffStr&&!activePeriodKeys.has(v.key))
-    .sort((a,b)=>a.lastDate<b.lastDate?1:-1)
-    .slice(0,20);
-  const inactiveRows=inactive.length?inactive.map(v=>{
-    const days=Math.floor((today-new Date(v.lastDate+'T12:00:00'))/(1000*60*60*24));
-    const lastFmt=v.lastDate.substring(5).replace('-','/');
-    return`<tr><td style="font-weight:600">${v.nome}</td><td style="color:var(--txt3)">${lastFmt}</td><td style="color:var(--orange);font-weight:700">${days} dias</td><td style="text-align:center">${v.pedidos}</td><td style="text-align:right;color:var(--green);font-weight:700">${fmtR(v.faturamento)}</td></tr>`;
-  }).join(''):`<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Nenhum cliente inativo encontrado.</td></tr>`;
+  _inactiveList=Object.values(histMap)
+    .filter(v=>v.lastDate&&v.lastDate<cutoffStr&&!activePeriodKeys.has(v.key));
+  inactivePage=0;
+  const inactiveSortBtns=[['last_asc','Último pedido ↑'],['last_desc','Último pedido ↓'],['days_asc','Inativo há ↑'],['days_desc','Inativo há ↓'],['orders_desc','Pedidos ↓'],['spent_desc','Total gasto ↓']].map(([m,l])=>`<button class="inactive-sort-btn" data-sort="${m}" onclick="sortInactive('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===inactiveSort?'var(--blue)':'var(--bg3)'};color:${m===inactiveSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
 
   mc.innerHTML=`
     <div class="metrics">
@@ -1118,7 +1163,8 @@ function pgClientes(){
       <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por pedidos</div><div class="card-sub">Clientes mais frequentes no período</div></div></div>${pedRows}</div>
       <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 15 por faturamento</div><div class="card-sub">Clientes por valor gasto no período</div></div></div>${fatRows}</div>
     </div>
-    <div class="card"><div class="card-hdr"><div><div class="card-ttl">Clientes inativos</div><div class="card-sub">Último pedido há mais de 30 dias · sem pedidos no período selecionado · top 20</div></div></div><div class="tw"><table><thead><tr><th>Nome</th><th>Último pedido</th><th>Inativo há</th><th style="text-align:center">Pedidos (total)</th><th style="text-align:right">Total gasto</th></tr></thead><tbody>${inactiveRows}</tbody></table></div></div>`;
+    <div class="card"><div class="card-hdr"><div><div class="card-ttl">Clientes inativos</div><div class="card-sub">Último pedido há mais de 30 dias · sem pedidos no período selecionado</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">${inactiveSortBtns}</div></div><div id="inactiveTable"></div></div>`;
+  renderInactivePage();
 }
 
 function pgTabela(at,an){
