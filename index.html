@@ -239,6 +239,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .sfi-val{font-size:13px;font-weight:800;color:var(--green);flex-shrink:0}
 
 </style>
+<script src='https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js'></script>
 </head>
 <body>
 <div class="overlay" id="ov" onclick="closeSb()"></div>
@@ -1749,21 +1750,18 @@ async function openBarcodeCamera(){
   overlay.innerHTML=`<div style="color:#fff;font-size:14px;font-weight:600">Aponte a câmera para o código de barras</div><video id="barcodeVideo" autoplay playsinline style="max-width:100%;max-height:55vh;border-radius:10px;background:#000"></video><div id="barcodeStatus" style="color:rgba(255,255,255,.7);font-size:12px;text-align:center">Aguardando câmera...</div><button onclick="closeBarcodeCamera()" style="font-size:13px;padding:8px 24px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-family:inherit">Fechar</button>`;
   document.body.appendChild(overlay);
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    const video=document.getElementById('barcodeVideo');
-    video.srcObject=stream;
-    window._barcodeCameraStream=stream;
-    if('BarcodeDetector' in window){
-      const detector=new BarcodeDetector({formats:['itf','code_128','qr_code','ean_13','ean_8','codabar']});
-      const scan=async()=>{
-        if(!document.getElementById('barcodeCameraOverlay'))return;
-        try{const codes=await detector.detect(video);if(codes.length){closeBarcodeCamera();const inp=document.getElementById('barcodeInput');if(inp)inp.value=codes[0].rawValue;return;}}catch(e){}
-        requestAnimationFrame(scan);
-      };
-      video.addEventListener('playing',()=>{document.getElementById('barcodeStatus').textContent='Escaneando...';scan();});
-    }else{
-      document.getElementById('barcodeStatus').textContent='Câmera ativa. BarcodeDetector não disponível neste dispositivo — digite o código manualmente.';
-    }
+    const codeReader=new ZXing.BrowserMultiFormatReader();
+    window._zxingReader=codeReader;
+    await codeReader.decodeFromVideoDevice(null,'barcodeVideo',(result,err)=>{
+      if(result){
+        closeBarcodeCamera();
+        const inp=document.getElementById('barcodeInput');
+        if(inp)inp.value=result.getText();
+        showBarcodeInput=true;
+        pgContas();
+      }
+    });
+    document.getElementById('barcodeStatus').textContent='Escaneando...';
   }catch(e){
     const st=document.getElementById('barcodeStatus');
     if(st)st.textContent='Erro ao acessar câmera: '+e.message;
@@ -1771,6 +1769,7 @@ async function openBarcodeCamera(){
 }
 
 function closeBarcodeCamera(){
+  if(window._zxingReader){try{window._zxingReader.reset();}catch(e){}window._zxingReader=null;}
   if(window._barcodeCameraStream)window._barcodeCameraStream.getTracks().forEach(t=>t.stop());
   window._barcodeCameraStream=null;
   const el=document.getElementById('barcodeCameraOverlay');
