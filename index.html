@@ -594,7 +594,7 @@ async function load(){
 
     // ContasPagar
     try{
-      const urlCP=BASE+encodeURIComponent('ContasPagar');
+      const urlCP=BASE+encodeURIComponent('ContasPagar')+'&cachebust='+Date.now();
       const respCP=await fetch(urlCP);
       const txtCP=await respCP.text();
       const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
@@ -1705,7 +1705,7 @@ async function recarregarContas(){
   if(btn){btn.textContent='⏳';btn.disabled=true;}
   try{
     const parseDate=v=>{if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}return typeof v==='string'?v.substring(0,10):'';};
-    const urlCP=BASE+encodeURIComponent('ContasPagar');
+    const urlCP=BASE+encodeURIComponent('ContasPagar')+'&cachebust='+Date.now();
     const respCP=await fetch(urlCP);
     const txtCP=await respCP.text();
     const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
