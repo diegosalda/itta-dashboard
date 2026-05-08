@@ -1573,6 +1573,13 @@ function logout() {
 // CONTAS A PAGAR
 // ================================================================
 
+function maskCurrency(el){
+  let v=el.value.replace(/\D/g,'');
+  if(!v){el.value='';return;}
+  v=(parseInt(v)/100).toFixed(2);
+  el.value='R$ '+v.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+
 function pgContas(){
   const mc=document.getElementById('mc');
   if(!mc)return;
@@ -1642,7 +1649,8 @@ function pgContas(){
 function salvarContaLocal(){
   const nome=(document.getElementById('cNome')?.value||'').trim();
   const categoria=document.getElementById('cCat')?.value||'';
-  const valor=parseFloat(document.getElementById('cValor')?.value||0);
+  const valorRaw=(document.getElementById('cValor')?.value||'').replace(/[^\d,]/g,'').replace(',','.');
+  const valor=parseFloat(valorRaw)||0;
   const vencimento=document.getElementById('cVcto')?.value||'';
   const codigoBarras=(document.getElementById('cCodBar')?.value||'').trim();
   const observacoes=(document.getElementById('cObs')?.value||'').trim();
