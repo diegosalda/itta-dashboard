@@ -1575,6 +1575,7 @@ function logout() {
 function pgContas(){
   const mc=document.getElementById('mc');
   if(!mc)return;
+  if(CONTAS.length===0){recarregarContas();return;}
   const hoje=new Date();
   const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
   const em7=new Date(hj.getTime()+7*24*60*60*1000);
@@ -1699,7 +1700,8 @@ async function recarregarContas(){
     const respCP=await fetch(urlCP);
     const txtCP=await respCP.text();
     const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-    CONTAS=(jsonCP.table?.rows||[]).map(r=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||''),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',criadoEm:r.c[10]?.v||'',atualizadoEm:r.c[11]?.v||''};}).filter(d=>d.id||d.nome);
+    const fetched=(jsonCP.table?.rows||[]).map(r=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||''),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',criadoEm:r.c[10]?.v||'',atualizadoEm:r.c[11]?.v||''};}).filter(d=>d.id||d.nome);
+    if(fetched.length>0||CONTAS.length===0)CONTAS=fetched;
   }catch(e){console.log('recarregarContas err:',e);}
   pgContas();
 }
