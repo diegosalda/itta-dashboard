@@ -1021,6 +1021,7 @@ let cupomSearch='';
 let _cupomRanking=[];
 let _cupomMaxUsos=1;
 let contasMes=new Date();
+let _contasLoading=false;
 let contasFilter='todos';
 let showContaForm=false;
 let showBarcodeInput=false;
@@ -1583,7 +1584,7 @@ function maskCurrency(el){
 function pgContas(){
   const mc=document.getElementById('mc');
   if(!mc)return;
-  if(CONTAS.length===0){mc.innerHTML='<div class="loading" style="padding:40px;text-align:center;color:var(--txt3)">⏳ Carregando contas...</div>';recarregarContas();return;}
+  if(CONTAS.length===0){if(_contasLoading)return;_contasLoading=true;mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3)">⏳ Carregando contas...</div>';recarregarContas();return;}
   const hoje=new Date();
   const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
   const em7=new Date(hj.getTime()+7*24*60*60*1000);
@@ -1710,8 +1711,9 @@ async function recarregarContas(){
     const txtCP=await respCP.text();
     const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     const fetched=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||'cp_'+i),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||''};}).filter(d=>d.nome);
-    if(fetched.length>0||CONTAS.length===0)CONTAS=fetched;
+    CONTAS=fetched;
   }catch(e){console.log('recarregarContas err:',e);}
+  _contasLoading=false;
   pgContas();
 }
 
