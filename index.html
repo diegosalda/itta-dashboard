@@ -600,7 +600,8 @@ async function load(){
       const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
       const parseDate=v=>{if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}return typeof v==='string'?v.substring(0,10):'';};
       const parseValor=v=>parseFloat((String(v??'0')).replace('R$','').replace(/\./g,'').replace(',','.').trim())||0;
-      CONTAS=(jsonCP.table?.rows||[]).slice(2).map((r,i)=>{const st=String(r.c[6]?.v||'').toLowerCase();const valorRaw=String(r.c[4]?.v||'0').replace('R$','').replace(/[.]/g,'').replace(',','.').trim();return{id:'cp_'+(i+3),fornecedor:r.c[0]?.v||'',nome:r.c[1]?.v||r.c[0]?.v||'',categoria:r.c[2]?.v||'',vencimento:parseDate(r.c[3]?.v),valor:parseFloat(valorRaw)||0,codigoBarras:r.c[5]?.v||'',status:st==='pago'?'pago':'pendente',observacoes:r.c[7]?.v||'',dataPagamento:'',criadoPor:''};}).filter(d=>d.nome||d.fornecedor);
+      console.log('ContasPagar raw rows:',(jsonCP.table?.rows||[]).length,'first row:',JSON.stringify((jsonCP.table?.rows||[])[0]?.c?.map(c=>c?.v)));
+      CONTAS=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[6]?.v||'').toLowerCase();const valorRaw=String(r.c[4]?.v||'0').replace('R$','').replace(/[.]/g,'').replace(',','.').trim();return{id:'cp_'+(i+2),fornecedor:r.c[0]?.v||'',nome:r.c[1]?.v||r.c[0]?.v||'',categoria:r.c[2]?.v||'',vencimento:parseDate(r.c[3]?.v),valor:parseFloat(valorRaw)||0,codigoBarras:r.c[5]?.v||'',status:st==='pago'?'pago':'pendente',observacoes:r.c[7]?.v||'',dataPagamento:'',criadoPor:''};}).filter(d=>d.nome||d.fornecedor);
       console.log('ContasPagar:',CONTAS.length,'registros');
     }catch(e){console.log('ContasPagar err:',e);}
 
@@ -1701,7 +1702,7 @@ async function recarregarContas(){
     const respCP=await fetch(urlCP);
     const txtCP=await respCP.text();
     const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-    const fetched=(jsonCP.table?.rows||[]).slice(2).map((r,i)=>{const st=String(r.c[6]?.v||'').toLowerCase();const valorRaw=String(r.c[4]?.v||'0').replace('R$','').replace(/[.]/g,'').replace(',','.').trim();return{id:'cp_'+(i+3),fornecedor:r.c[0]?.v||'',nome:r.c[1]?.v||r.c[0]?.v||'',categoria:r.c[2]?.v||'',vencimento:parseDate(r.c[3]?.v),valor:parseFloat(valorRaw)||0,codigoBarras:r.c[5]?.v||'',status:st==='pago'?'pago':'pendente',observacoes:r.c[7]?.v||'',dataPagamento:'',criadoPor:''};}).filter(d=>d.nome||d.fornecedor);
+    const fetched=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[6]?.v||'').toLowerCase();const valorRaw=String(r.c[4]?.v||'0').replace('R$','').replace(/[.]/g,'').replace(',','.').trim();return{id:'cp_'+(i+2),fornecedor:r.c[0]?.v||'',nome:r.c[1]?.v||r.c[0]?.v||'',categoria:r.c[2]?.v||'',vencimento:parseDate(r.c[3]?.v),valor:parseFloat(valorRaw)||0,codigoBarras:r.c[5]?.v||'',status:st==='pago'?'pago':'pendente',observacoes:r.c[7]?.v||'',dataPagamento:'',criadoPor:''};}).filter(d=>d.nome||d.fornecedor);
     if(fetched.length>0||CONTAS.length===0)CONTAS=fetched;
   }catch(e){console.log('recarregarContas err:',e);}
   pgContas();
