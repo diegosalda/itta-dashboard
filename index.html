@@ -1584,7 +1584,6 @@ function maskCurrency(el){
 function pgContas(){
   const mc=document.getElementById('mc');
   if(!mc)return;
-  if(CONTAS.length===0){if(_contasLoading)return;_contasLoading=true;mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3)">⏳ Carregando contas...</div>';recarregarContas();return;}
   const hoje=new Date();
   const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
   const em7=new Date(hj.getTime()+7*24*60*60*1000);
