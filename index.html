@@ -1585,6 +1585,7 @@ function maskCurrency(el){
 function pgContas(){
   const mc=document.getElementById('mc');
   if(!mc)return;
+  if(CONTAS.length===0&&!window._contasAutoLoaded){window._contasAutoLoaded=true;mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3)">⏳ Carregando contas...</div>';recarregarContas();return;}
   const hoje=new Date();
   const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
   const em7=new Date(hj.getTime()+7*24*60*60*1000);
@@ -1752,7 +1753,9 @@ async function openBarcodeCamera(){
   try{
     const codeReader=new ZXing.BrowserMultiFormatReader();
     window._zxingReader=codeReader;
-    await codeReader.decodeFromVideoDevice(null,'barcodeVideo',(result,err)=>{
+    const devices=await codeReader.listVideoInputDevices();
+    const selectedDeviceId=devices[devices.length-1]?.deviceId;
+    codeReader.decodeFromVideoDevice(selectedDeviceId,'barcodeVideo',(result,err)=>{
       if(result){
         closeBarcodeCamera();
         const inp=document.getElementById('barcodeInput');
@@ -1783,10 +1786,25 @@ function copiarCodigoBarras(){
 
 function usarCodigoBarras(){
   const v=document.getElementById('barcodeInput')?.value||'';
+  const digits=v.replace(/\D/g,'');
+  let valor=null,vencimento=null;
+  if(digits.length===44){
+    const valorRaw=digits.substring(9,19);
+    valor=parseFloat(valorRaw)/100;
+    const fator=parseInt(digits.substring(5,9));
+    if(fator>0){const base=new Date(1997,9,7);base.setDate(base.getDate()+(fator-1000));vencimento=base.toISOString().substring(0,10);}
+  }else if(digits.length===47||digits.length===48){
+    const valorRaw=digits.substring(37,47);
+    valor=parseFloat(valorRaw)/100;
+  }
   showBarcodeInput=false;
   showContaForm=true;
   pgContas();
-  setTimeout(()=>{const cb=document.getElementById('cCodBar');if(cb&&v)cb.value=v;},50);
+  setTimeout(()=>{
+    const cb=document.getElementById('cCodBar');if(cb&&v)cb.value=v;
+    if(valor&&valor>0){const vEl=document.getElementById('cValor');if(vEl)vEl.value=valor.toFixed(2);}
+    if(vencimento){const dEl=document.getElementById('cVcto');if(dEl)dEl.value=vencimento;}
+  },100);
 }
 
 // Permissões verificadas dentro do goPage original
