@@ -1712,9 +1712,12 @@ async function recarregarContas(){
     const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     const fetched=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||'cp_'+i),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||''};}).filter(d=>d.nome);
     CONTAS=fetched;
-  }catch(e){console.log('recarregarContas err:',e);}
-  _contasLoading=false;
-  pgContas();
+  }catch(e){
+    console.error('recarregarContas err:',e);
+  }finally{
+    _contasLoading=false;
+    pgContas();
+  }
 }
 
 function showDayDetail(dateStr){
