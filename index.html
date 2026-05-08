@@ -255,6 +255,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('bairros',this)"><span class="nav-icon">📍</span>Bairros</div>
       <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" onclick="goPage('cupons',this)"><span class="nav-icon">🎟️</span>Cupons</div>
+      <div class="nav-item" onclick="goPage('contas',this)"><span class="nav-icon">💰</span>Contas a Pagar</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('tabela',this)"><span class="nav-icon">📋</span>Tabela completa</div>
@@ -335,13 +336,13 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],CONTAS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -590,6 +591,17 @@ async function load(){
       console.log('Cupons_Raw:',CUPONS.length,'registros');
     }catch(e){console.log('Cupons err:',e);}
 
+    // ContasPagar
+    try{
+      const urlCP=BASE+encodeURIComponent('ContasPagar');
+      const respCP=await fetch(urlCP);
+      const txtCP=await respCP.text();
+      const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      const parseDate=v=>{if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}return typeof v==='string'?v.substring(0,10):'';};
+      CONTAS=(jsonCP.table?.rows||[]).map(r=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||''),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',criadoEm:r.c[10]?.v||'',atualizadoEm:r.c[11]?.v||''};}).filter(d=>d.id||d.nome);
+      console.log('ContasPagar:',CONTAS.length,'registros');
+    }catch(e){console.log('ContasPagar err:',e);}
+
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
@@ -668,6 +680,7 @@ function aplicar(){
     else if(PAGE==='bairros')pgBairros();
     else if(PAGE==='clientes')pgClientes();
     else if(PAGE==='cupons')pgCupons();
+    else if(PAGE==='contas')pgContas();
     else if(PAGE==='tabela')pgTabela(at,an);
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -1005,6 +1018,10 @@ let _byFat=[];
 let cupomSearch='';
 let _cupomRanking=[];
 let _cupomMaxUsos=1;
+let contasMes=new Date();
+let contasFilter='todos';
+let showContaForm=false;
+let showBarcodeInput=false;
 
 function renderDistTable(bucketList,sort){
   const sorted=[...bucketList];
@@ -1548,6 +1565,137 @@ function logout() {
   localStorage.removeItem(SESSION_KEY);
   USUARIO_ATUAL = null;
   location.reload();
+}
+
+// ================================================================
+// CONTAS A PAGAR
+// ================================================================
+
+function pgContas(){
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  const hoje=new Date();
+  const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
+  const em7=new Date(hj.getTime()+7*24*60*60*1000);
+  const hjStr=ds(hj),em7Str=ds(em7);
+  const ano=contasMes.getFullYear(),mes=contasMes.getMonth();
+  const mesNome=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mes];
+  const mesStr=`${ano}-${String(mes+1).padStart(2,'0')}`;
+  let visivel=CONTAS.filter(c=>c.vencimento&&c.vencimento.startsWith(mesStr));
+  if(contasFilter==='pendentes')visivel=visivel.filter(c=>c.status!=='pago');
+  else if(contasFilter==='pagos')visivel=visivel.filter(c=>c.status==='pago');
+  const atrasadas=CONTAS.filter(c=>c.vencimento&&c.vencimento<hjStr&&c.status!=='pago');
+  const emBreve=CONTAS.filter(c=>c.vencimento&&c.vencimento>=hjStr&&c.vencimento<=em7Str&&c.status!=='pago');
+  let alertHtml='';
+  if(atrasadas.length||emBreve.length){
+    alertHtml='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">';
+    if(atrasadas.length)alertHtml+=`<span style="background:rgba(239,68,68,.15);color:var(--r);border:1px solid rgba(239,68,68,.3);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600">🔴 ${atrasadas.length} conta${atrasadas.length>1?'s':''} atrasada${atrasadas.length>1?'s':''}</span>`;
+    if(emBreve.length)alertHtml+=`<span style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.3);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600">🟠 ${emBreve.length} vence${emBreve.length>1?'m':''} em 7 dias</span>`;
+    alertHtml+='</div>';
+  }
+  const firstDay=new Date(ano,mes,1),lastDay=new Date(ano,mes+1,0);
+  const startDow=firstDay.getDay(),totalDays=lastDay.getDate();
+  const dayMap={};
+  visivel.forEach(c=>{if(!c.vencimento)return;const d=parseInt(c.vencimento.split('-')[2]);if(!dayMap[d])dayMap[d]=[];dayMap[d].push(c);});
+  const dayNames=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let cells=dayNames.map(d=>`<div style="text-align:center;font-size:10px;font-weight:700;color:var(--txt3);padding:4px 0">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++)cells+=`<div></div>`;
+  for(let d=1;d<=totalDays;d++){
+    const dateStr=`${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=dateStr===hjStr;
+    const contas=dayMap[d]||[];
+    const pills=contas.map(c=>{
+      const isPago=c.status==='pago';
+      const isAtrasado=!isPago&&c.vencimento<hjStr;
+      const color=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
+      const bg=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
+      const nome=c.nome.length>10?c.nome.substring(0,10)+'…':c.nome;
+      return`<div onclick="showContaDetail('${c.id.replace(/'/g,"\\'")}','${c.nome.replace(/'/g,"\\'")}','${c.categoria.replace(/'/g,"\\'")}',${c.valor},'${c.vencimento}','${c.codigoBarras.replace(/'/g,"\\'")}','${c.observacoes.replace(/'/g,"\\'")}','${c.status}')" style="background:${bg};color:${color};border-radius:4px;padding:1px 4px;font-size:9px;font-weight:600;cursor:pointer;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>`;
+    }).join('');
+    cells+=`<div style="border:1px solid ${isToday?'var(--r)':'var(--border)'};border-radius:6px;padding:3px 4px;min-height:52px;background:${isToday?'rgba(224,53,53,.06)':'var(--bg3)'}"><div style="font-size:10px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--r)':'var(--txt3)'};margin-bottom:1px">${d}</div>${pills}</div>`;
+  }
+  const sorted=[...visivel].sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
+  const tableRows=sorted.map(c=>{
+    const isPago=c.status==='pago';
+    const isAtrasado=!isPago&&c.vencimento&&c.vencimento<hjStr;
+    const sc=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
+    const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
+    const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
+    const vcto=c.vencimento?c.vencimento.split('-').reverse().join('/'):'–';
+    return`<tr><td>${c.nome}</td><td style="color:var(--txt3)">${c.categoria}</td><td style="text-align:center">${vcto}</td><td style="text-align:right;color:var(--green)">${fmtR(c.valor)}</td><td style="text-align:center"><span style="background:${sb};color:${sc};border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">${sl}</span></td><td style="text-align:center"><div style="display:flex;gap:4px;justify-content:center">${!isPago?`<button onclick="marcarContaPaga('${c.id.replace(/'/g,"\\'")}',true)" style="font-size:10px;padding:2px 8px;border-radius:20px;border:none;background:rgba(34,197,94,.15);color:var(--green);cursor:pointer;font-family:inherit;font-weight:600">✓ Pago</button>`:''}<button onclick="excluirConta('${c.id.replace(/'/g,"\\'")}',true)" style="font-size:10px;padding:2px 8px;border-radius:20px;border:none;background:rgba(239,68,68,.1);color:var(--r);cursor:pointer;font-family:inherit;font-weight:600">✕</button></div></td></tr>`;
+  }).join('');
+  const categorias={'Custos Adm':['Mat. Escritório','Manutenção','Benfeitorias','Beneditta'],'Custos Operacionais':['Água','Aluguel','Contador','Detetização','Segurança','Energia','Gás','Extras','Jurídico','Software','Internet','Seguro','Taxas Cartão','Alug. Máq.'],'Funcionários':['Salário','Transporte','Comissão','Uber','Férias','Extras','13°','Folguista','Pró-Labore','Vale'],'Embalagem':['Caixas de Pizza','Papéis','Lacre'],'Impostos':['DAS - Simples','Diversos','DARF','FGTS'],'Marketing':['Tráfego Pago','Agência de Marketing','iFood Ads'],'Insumos':['Insumos','Bebidas'],'Logística':['Motoboys'],'Empréstimos':['Extras','Saídas Caixa Econômica','Caixa Econ.']};
+  const catOptions=Object.entries(categorias).map(([grp,items])=>`<optgroup label="${grp}">${items.map(it=>`<option value="${grp} · ${it}">${it}</option>`).join('')}</optgroup>`).join('');
+  const iStyle='width:100%;font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:inherit;box-sizing:border-box';
+  const formHtml=showContaForm?`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg3)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nome *</label><input id="cNome" type="text" placeholder="Ex: Aluguel" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Categoria *</label><select id="cCat" style="${iStyle}"><option value="">Selecione...</option>${catOptions}</select></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Valor *</label><input id="cValor" type="number" step="0.01" placeholder="0,00" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Vencimento *</label><input id="cVcto" type="date" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Código de barras</label><input id="cCodBar" type="text" placeholder="Opcional" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Observações</label><input id="cObs" type="text" placeholder="Opcional" style="${iStyle}"></div></div><div style="display:flex;gap:8px"><button onclick="salvarContaLocal()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">Salvar conta</button><button onclick="showContaForm=false;pgContas()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--bg2);color:var(--txt2);cursor:pointer;font-family:inherit">Cancelar</button></div></div>`:'';
+  const barcodeHtml=showBarcodeInput?`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg3)"><div style="font-size:11px;color:var(--txt3);margin-bottom:6px">Cole ou digite o código de barras do boleto:</div><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><input id="barcodeInput" type="text" placeholder="Código de barras..." style="flex:1;font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:monospace"></div><div style="display:flex;gap:8px"><button onclick="copiarCodigoBarras()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">📋 Copiar</button><button onclick="usarCodigoBarras()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">Usar este código</button><button onclick="showBarcodeInput=false;pgContas()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:none;background:var(--bg2);color:var(--txt2);cursor:pointer;font-family:inherit">Fechar</button></div></div>`:'';
+  const filterBtns=['todos','pendentes','pagos'].map(f=>{const lbl={todos:'Todos',pendentes:'Pendentes',pagos:'Pagos'}[f];const on=f===contasFilter;return`<button onclick="contasFilter='${f}';pgContas()" style="font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid ${on?'var(--r)':'var(--border)'};background:${on?'rgba(224,53,53,.15)':'transparent'};color:${on?'var(--r)':'var(--txt2)'};cursor:pointer;font-family:inherit;font-weight:600">${lbl}</button>`;}).join('');
+  const totalMes=visivel.reduce((s,c)=>s+c.valor,0);
+  const totalPago=visivel.filter(c=>c.status==='pago').reduce((s,c)=>s+c.valor,0);
+  const totalPend=visivel.filter(c=>c.status!=='pago').reduce((s,c)=>s+c.valor,0);
+  mc.innerHTML=`${alertHtml}<div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="showContaForm=!showContaForm;showBarcodeInput=false;pgContas()" style="font-size:12px;padding:6px 14px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">+ Nova conta manual</button><button onclick="showBarcodeInput=!showBarcodeInput;showContaForm=false;pgContas()" style="font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">📷 Ler código de barras</button></div><div style="display:flex;gap:6px">${filterBtns}</div></div>${formHtml}${barcodeHtml}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Total do mês</div><div style="font-size:18px;font-weight:700;color:var(--txt)">${fmtR(totalMes)}</div></div><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Pago</div><div style="font-size:18px;font-weight:700;color:var(--green)">${fmtR(totalPago)}</div></div><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Pendente</div><div style="font-size:18px;font-weight:700;color:var(--orange)">${fmtR(totalPend)}</div></div></div><div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><button onclick="contasMes=new Date(contasMes.getFullYear(),contasMes.getMonth()-1,1);pgContas()" style="font-size:20px;background:none;border:none;color:var(--txt2);cursor:pointer;padding:4px 10px">‹</button><div style="font-weight:700;font-size:14px;color:var(--txt)">${mesNome} ${ano}</div><button onclick="contasMes=new Date(contasMes.getFullYear(),contasMes.getMonth()+1,1);pgContas()" style="font-size:20px;background:none;border:none;color:var(--txt2);cursor:pointer;padding:4px 10px">›</button></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">${cells}</div></div><div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Contas — ${mesNome} ${ano}</div><div class="card-sub">${visivel.length} conta${visivel.length!==1?'s':''} · ${fmtR(totalMes)} total</div></div></div><div class="tw"><table><thead><tr><th>Nome</th><th>Categoria</th><th style="text-align:center">Vencimento</th><th style="text-align:right">Valor</th><th style="text-align:center">Status</th><th style="text-align:center">Ações</th></tr></thead><tbody>${tableRows||'<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:20px">Nenhuma conta neste período</td></tr>'}</tbody></table></div></div><div id="contaDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'"></div>`;
+}
+
+function salvarContaLocal(){
+  const nome=(document.getElementById('cNome')?.value||'').trim();
+  const categoria=document.getElementById('cCat')?.value||'';
+  const valor=parseFloat(document.getElementById('cValor')?.value||0);
+  const vencimento=document.getElementById('cVcto')?.value||'';
+  const codigoBarras=(document.getElementById('cCodBar')?.value||'').trim();
+  const observacoes=(document.getElementById('cObs')?.value||'').trim();
+  if(!nome||!categoria||!valor||!vencimento){alert('Preencha os campos obrigatórios: Nome, Categoria, Valor e Vencimento.');return;}
+  CONTAS.push({id:'local_'+Date.now(),nome,categoria,valor,vencimento,codigoBarras,observacoes,status:'pendente',dataPagamento:'',criadoPor:USUARIO_ATUAL?.email||'',criadoEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
+  // Apps Script sync stub — publish a doPost web app and set APPS_SCRIPT_URL to enable
+  showContaForm=false;
+  contasMes=new Date(vencimento+'T12:00:00');
+  pgContas();
+}
+
+function marcarContaPaga(id){
+  const c=CONTAS.find(c=>c.id===id);
+  if(!c)return;
+  c.status='pago';
+  c.dataPagamento=ds(new Date());
+  c.atualizadoEm=new Date().toISOString();
+  const modal=document.getElementById('contaDetailModal');
+  if(modal)modal.style.display='none';
+  pgContas();
+}
+
+function excluirConta(id){
+  if(!confirm('Excluir esta conta?'))return;
+  const idx=CONTAS.findIndex(c=>c.id===id);
+  if(idx>=0)CONTAS.splice(idx,1);
+  pgContas();
+}
+
+function showContaDetail(id,nome,categoria,valor,vencimento,codigoBarras,observacoes,status){
+  const modal=document.getElementById('contaDetailModal');
+  if(!modal)return;
+  const hoje=ds(new Date());
+  const isPago=status==='pago';
+  const isAtrasado=!isPago&&vencimento&&vencimento<hoje;
+  const sc=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
+  const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
+  const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
+  const vctoFmt=vencimento?vencimento.split('-').reverse().join('/'):'–';
+  const cbHtml=codigoBarras?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Código de barras</div><div style="display:flex;gap:6px;align-items:flex-start"><code style="font-size:10px;background:var(--bg3);padding:5px 8px;border-radius:6px;border:1px solid var(--border);word-break:break-all;flex:1;color:var(--txt)">${codigoBarras}</code><button onclick="navigator.clipboard.writeText(this.dataset.v).then(()=>alert('Copiado!'))" data-v="${codigoBarras}" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;white-space:nowrap">📋</button></div></div>`:'';
+  const obsHtml=observacoes?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--txt3);margin-bottom:2px">Observações</div><div style="font-size:12px;color:var(--txt2)">${observacoes}</div></div>`:'';
+  modal.innerHTML=`<div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:420px;width:90%;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div><div style="font-size:16px;font-weight:700;color:var(--txt)">${nome}</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">${categoria}</div></div><button onclick="document.getElementById('contaDetailModal').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div style="background:var(--bg3);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--txt3)">Valor</div><div style="font-size:16px;font-weight:700;color:var(--green)">${fmtR(valor)}</div></div><div style="background:var(--bg3);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--txt3)">Vencimento</div><div style="font-size:16px;font-weight:700;color:var(--txt)">${vctoFmt}</div></div></div><div style="margin-bottom:12px"><span style="background:${sb};color:${sc};border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">${sl}</span></div>${cbHtml}${obsHtml}<div style="display:flex;gap:8px;margin-top:6px">${!isPago?`<button onclick="marcarContaPaga('${id}')" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">✓ Marcar como pago</button>`:`<button onclick="document.getElementById('contaDetailModal').style.display='none'" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:none;background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">Fechar</button>`}</div></div>`;
+  modal.style.display='flex';
+}
+
+function copiarCodigoBarras(){
+  const v=document.getElementById('barcodeInput')?.value;
+  if(v)navigator.clipboard.writeText(v).then(()=>alert('Código copiado!')).catch(()=>{});
+}
+
+function usarCodigoBarras(){
+  const v=document.getElementById('barcodeInput')?.value||'';
+  showBarcodeInput=false;
+  showContaForm=true;
+  pgContas();
+  setTimeout(()=>{const cb=document.getElementById('cCodBar');if(cb&&v)cb.value=v;},50);
 }
 
 // Permissões verificadas dentro do goPage original
