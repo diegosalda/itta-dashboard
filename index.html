@@ -537,6 +537,7 @@ async function load(){
         if(rows.length<CHUNK)break;
         offset+=CHUNK;
       }
+      console.log('[BAIRROS] Total loaded:', allBrRows.length, 'chunks fetched with offset up to', offset);
       BAIRROS=allBrRows.map(parseBrRow).filter(d=>d.id);
       console.log('Bairros_Raw:',BAIRROS.length,'registros');
     }catch(e){console.log('Bairros err:',e);}
@@ -1228,6 +1229,8 @@ function pgBairros(){
     })
     .sort((a,b)=>a.avg-b.avg)
     .slice(0,20);
+  console.log('[TEMPO] tempoList sample:', tempoList.slice(0,3).map(v=>({bairro:v.bairro,dist:v.dist,count:v.count})));
+  console.log('[TEMPO] Pituba entry:', tempoList.find(v=>v.bairro==='Pituba'));
   _tempoList=tempoList;
   tempoSort='dist_asc';
   const tempoSortBtns=[['dist_asc','Distância ↑'],['dist_desc','Distância ↓'],['count_asc','Pedidos ↑'],['count_desc','Pedidos ↓']].map(([m,l])=>`<button class="tempo-sort-btn" data-sort="${m}" onclick="sortTempoBairros('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===tempoSort?'var(--blue)':'var(--bg3)'};color:${m===tempoSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
