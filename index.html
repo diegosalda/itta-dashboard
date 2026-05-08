@@ -1038,13 +1038,12 @@ function sortDist(mode){
 function renderTempoBairros(){
   const el=document.getElementById('tempoTable');
   if(!el)return;
-  const withDist=_tempoList.filter(v=>v.dist!=null);
-  const noDist=_tempoList.filter(v=>v.dist==null);
-  if(tempoSort==='dist_asc')withDist.sort((a,b)=>a.dist-b.dist);
-  else if(tempoSort==='dist_desc')withDist.sort((a,b)=>b.dist-a.dist);
-  else if(tempoSort==='count_asc'){withDist.sort((a,b)=>a.count-b.count);noDist.sort((a,b)=>a.count-b.count);}
-  else if(tempoSort==='count_desc'){withDist.sort((a,b)=>b.count-a.count);noDist.sort((a,b)=>b.count-a.count);}
-  const combined=[...withDist,...noDist].slice(0,20);
+  const sorted=[..._tempoList];
+  if(tempoSort==='dist_asc')sorted.sort((a,b)=>(a.dist??0)-(b.dist??0));
+  else if(tempoSort==='dist_desc')sorted.sort((a,b)=>(b.dist??-1)-(a.dist??-1));
+  else if(tempoSort==='count_asc')sorted.sort((a,b)=>a.count-b.count);
+  else if(tempoSort==='count_desc')sorted.sort((a,b)=>b.count-a.count);
+  const combined=sorted.slice(0,20);
   const renderRow=v=>{
     const tc=v.avg<=40?'var(--green)':v.avg<=60?'var(--orange)':'var(--r)';
     const sc=v.pctSLA>=80?'var(--green)':v.pctSLA>=50?'var(--orange)':'var(--r)';
