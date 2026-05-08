@@ -1171,7 +1171,14 @@ function pgBairros(){
   const mc=document.getElementById('mc');
   if(!mc)return;
   if(!BAIRROS.length){mc.innerHTML='<div class="loading">Dados de bairros não disponíveis.</div>';return;}
-  const dados=BAIRROS.filter(d=>d.data>=is&&d.data<=fs&&!d.cancelado);
+  const dias=getDias();
+  const todosOsDias=dias.length===0||dias.length===7;
+  const DIAS_MAP=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const dados=BAIRROS.filter(d=>{
+    if(!d.data||d.data<is||d.data>fs||d.cancelado)return false;
+    if(!todosOsDias){const dow=new Date(d.data+'T12:00:00').getDay();if(!dias.includes(DIAS_MAP[dow]))return false;}
+    return true;
+  });
   if(!dados.length){mc.innerHTML='<div class="loading">Sem dados para o período selecionado.</div>';return;}
   const map={};
   dados.forEach(d=>{const b=d.bairro||'Desconhecido';if(!map[b])map[b]={pedidos:0,faturamento:0};map[b].pedidos++;map[b].faturamento+=d.valor||0;});
