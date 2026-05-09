@@ -1812,12 +1812,10 @@ function usarCodigoBarras(){
     const fator=parseInt(digits.substring(5,9));
     if(fator>1000){const base=new Date(1997,9,7);base.setDate(base.getDate()+(fator-1000));vencimento=base.toISOString().substring(0,10);}
   }else if(digits.length===47||digits.length===48){
-    const v1=parseFloat(digits.substring(37,47))/100;
     const v2=parseFloat(digits.substring(12,17))/100;
-    const v3=parseFloat(digits.substring(34,44))/100;
-    if(v1>0.5&&v1<50000)valor=v1;
-    else if(v2>0.5&&v2<50000)valor=v2;
-    else if(v3>0.5&&v3<50000)valor=v3;
+    const v1=parseFloat(digits.substring(37,47))/100;
+    if(v2>0.5&&v2<50000)valor=v2;
+    else if(v1>0.5&&v1<50000)valor=v1;
   }else if(digits.length>=36&&digits.length<=43){
     if(digits.length===42){
       const v3=parseFloat(digits.substring(4,13))/100;
