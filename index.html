@@ -1634,7 +1634,8 @@ function pgContas(){
     const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
     const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
     const vcto=c.vencimento?c.vencimento.split('-').reverse().join('/'):'–';
-    return`<tr><td>${c.nome}</td><td style="color:var(--txt3)">${c.categoria}</td><td style="text-align:center">${vcto}</td><td style="text-align:right;color:var(--green)">${fmtR(c.valor)}</td><td style="text-align:center"><span style="background:${sb};color:${sc};border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">${sl}</span></td><td style="text-align:center"><div style="display:flex;gap:4px;justify-content:center">${!isPago?`<button onclick="marcarContaPaga('${c.id.replace(/'/g,"\\'")}',true)" style="font-size:10px;padding:2px 8px;border-radius:20px;border:none;background:rgba(34,197,94,.15);color:var(--green);cursor:pointer;font-family:inherit;font-weight:600">✓ Pago</button>`:''}<button onclick="excluirConta('${c.id.replace(/'/g,"\\'")}',true)" style="font-size:10px;padding:2px 8px;border-radius:20px;border:none;background:rgba(239,68,68,.1);color:var(--r);cursor:pointer;font-family:inherit;font-weight:600">✕</button></div></td></tr>`;
+    const safeId=c.id.replace(/'/g,"\\'");
+    return`<tr onclick="abrirDetalhesConta('${safeId}')" style="cursor:pointer"><td>${c.nome}</td><td style="color:var(--txt3)">${c.categoria}</td><td style="text-align:center">${vcto}</td><td style="text-align:right;color:var(--green)">${fmtR(c.valor)}</td><td style="text-align:center"><span style="background:${sb};color:${sc};border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">${sl}</span></td><td style="text-align:center;white-space:nowrap">${!isPago?`<button onclick="event.stopPropagation();marcarContaPaga('${safeId}',true)" style="font-size:11px;padding:3px 8px;border-radius:5px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;margin:1px">✓ Pago</button>`:''}<button onclick="event.stopPropagation();editarConta('${safeId}')" style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;margin:1px">✏️ Editar</button><button onclick="event.stopPropagation();excluirConta('${safeId}',true)" style="font-size:11px;padding:3px 8px;border-radius:5px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-family:inherit;margin:1px">Excluir</button></td></tr>`;
   }).join('');
   const categorias={'Custos Adm':['Mat. Escritório','Manutenção','Benfeitorias','Beneditta'],'Custos Operacionais':['Água','Aluguel','Contador','Detetização','Segurança','Energia','Gás','Extras','Jurídico','Software','Internet','Seguro','Taxas Cartão','Alug. Máq.'],'Funcionários':['Salário','Transporte','Comissão','Uber','Férias','Extras','13°','Folguista','Pró-Labore','Vale'],'Embalagem':['Caixas de Pizza','Papéis','Lacre'],'Impostos':['DAS - Simples','Diversos','DARF','FGTS'],'Marketing':['Tráfego Pago','Agência de Marketing','iFood Ads'],'Insumos':['Insumos','Bebidas'],'Logística':['Motoboys'],'Empréstimos':['Extras','Saídas Caixa Econômica','Caixa Econ.']};
   const catOptions=Object.entries(categorias).map(([grp,items])=>`<optgroup label="${grp}">${items.map(it=>`<option value="${grp} · ${it}">${it}</option>`).join('')}</optgroup>`).join('');
@@ -1683,6 +1684,35 @@ function excluirConta(id){
   if(idx>=0)CONTAS.splice(idx,1);
   fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'excluir',id}),headers:{'Content-Type':'application/json'}}).then(()=>alert('Conta excluída!')).catch(()=>{});
   pgContas();
+}
+
+function editarConta(id){
+  const c=CONTAS.find(x=>x.id===id);
+  if(!c)return;
+  const overlay=document.getElementById('contaDetailModal');
+  if(!overlay)return;
+  const categorias={'Custos Adm':['Mat. Escritório','Manutenção','Benfeitorias','Beneditta'],'Custos Operacionais':['Água','Aluguel','Contador','Detetização','Segurança','Energia','Gás','Extras','Jurídico','Software','Internet','Seguro','Taxas Cartão','Alug. Máq.'],'Funcionários':['Salário','Transporte','Comissão','Uber','Férias','Extras','13°','Folguista','Pró-Labore','Vale'],'Embalagem':['Caixas de Pizza','Papéis','Lacre'],'Impostos':['DAS - Simples','Diversos','DARF','FGTS'],'Marketing':['Tráfego Pago','Agência de Marketing','iFood Ads'],'Insumos':['Insumos','Bebidas'],'Logística':['Motoboys'],'Empréstimos':['Extras','Saídas Caixa Econômica','Caixa Econ.']};
+  const cats=Object.entries(categorias).map(([grp,items])=>items.map(it=>`<option value='${grp} · ${it}' ${c.categoria===grp+' · '+it?'selected':''}>${grp} · ${it}</option>`).join('')).join('');
+  const iStyle='width:100%;font-size:13px;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:inherit;box-sizing:border-box;margin-top:4px';
+  overlay.style.display='flex';
+  overlay.innerHTML=`<div style='background:var(--bg);border-radius:16px;padding:24px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto' onclick='event.stopPropagation()'><div style='font-size:16px;font-weight:700;color:var(--txt);margin-bottom:16px'>✏️ Editar conta</div><div style='display:grid;gap:12px'><div><label style='font-size:11px;color:var(--txt3)'>Nome *</label><input id='eCNome' value="${c.nome.replace(/"/g,'&quot;')}" style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Categoria *</label><select id='eCCat' style='${iStyle}'><option value=''>Selecione...</option>${cats}</select></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'><div><label style='font-size:11px;color:var(--txt3)'>Valor *</label><input id='eCValor' type='number' step='0.01' value='${c.valor}' style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Vencimento *</label><input id='eCVcto' type='date' value='${c.vencimento}' style='${iStyle}'></div></div><div><label style='font-size:11px;color:var(--txt3)'>Código de barras</label><input id='eCCodBar' value="${(c.codigoBarras||'').replace(/"/g,'&quot;')}" style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Observações</label><input id='eCObs' value="${(c.observacoes||'').replace(/"/g,'&quot;')}" style='${iStyle}'></div></div><div style='display:flex;gap:8px;margin-top:16px'><button onclick='salvarEdicaoConta("${id}")' style='flex:1;padding:10px;border-radius:8px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px'>Salvar</button><button onclick='document.getElementById("contaDetailModal").style.display="none"' style='flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:13px'>Cancelar</button></div></div>`;
+}
+
+function salvarEdicaoConta(id){
+  const c=CONTAS.find(x=>x.id===id);
+  if(!c)return;
+  const nome=document.getElementById('eCNome')?.value?.trim();
+  const categoria=document.getElementById('eCCat')?.value;
+  const valor=parseFloat(document.getElementById('eCValor')?.value||0);
+  const vencimento=document.getElementById('eCVcto')?.value;
+  const codigoBarras=document.getElementById('eCCodBar')?.value||'';
+  const observacoes=document.getElementById('eCObs')?.value||'';
+  if(!nome||!categoria||!valor||!vencimento){alert('Preencha os campos obrigatórios.');return;}
+  c.nome=nome;c.categoria=categoria;c.valor=valor;c.vencimento=vencimento;c.codigoBarras=codigoBarras;c.observacoes=observacoes;c.atualizadoEm=new Date().toISOString();
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'atualizar',id,nome,categoria,valor,vencimento,codigoBarras,observacoes}),headers:{'Content-Type':'application/json'}}).then(()=>{}).catch(()=>{});
+  document.getElementById('contaDetailModal').style.display='none';
+  pgContas();
+  alert('Conta atualizada!');
 }
 
 function showContaDetail(id,nome,categoria,valor,vencimento,codigoBarras,observacoes,status){
