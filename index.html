@@ -1805,13 +1805,16 @@ function usarCodigoBarras(){
   const digits=v.replace(/\D/g,'');
   let valor=null,vencimento=null;
   if(digits.length===44){
-    const valorRaw=digits.substring(9,19);
-    valor=parseFloat(valorRaw)/100;
+    valor=parseFloat(digits.substring(9,19))/100;
     const fator=parseInt(digits.substring(5,9));
-    if(fator>0){const base=new Date(1997,9,7);base.setDate(base.getDate()+(fator-1000));vencimento=base.toISOString().substring(0,10);}
+    if(fator>1000){const base=new Date(1997,9,7);base.setDate(base.getDate()+(fator-1000));vencimento=base.toISOString().substring(0,10);}
   }else if(digits.length===47||digits.length===48){
-    const valorRaw=digits.substring(37,47);
-    valor=parseFloat(valorRaw)/100;
+    valor=parseFloat(digits.substring(37,47))/100;
+  }else if(digits.length>=36&&digits.length<=40){
+    const v1=parseFloat(digits.substring(4,15))/100;
+    const v2=parseFloat(digits.substring(5,14))/100;
+    if(v1>1&&v1<50000)valor=v1;
+    else if(v2>1&&v2<50000)valor=v2;
   }
   showBarcodeInput=false;
   showContaForm=true;
