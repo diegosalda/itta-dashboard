@@ -1753,7 +1753,7 @@ function openBarcodeCamera(){
   document.body.appendChild(overlay);
   Quagga.init({
     inputStream:{type:'LiveStream',target:document.getElementById('quaggaViewport'),constraints:{facingMode:'environment',width:{ideal:640},height:{ideal:480}}},
-    decoder:{readers:[{format:'i2of5_reader',config:{supplements:[]}},  'code_128_reader','ean_reader'],multiple:false,debug:{showCanvas:true,showPatches:true,showFoundPatches:true,showSkeleton:true,showLabels:true,showPatchLabels:true,showRemainingPatchLabels:true}},
+    decoder:{readers:[{format:'i2of5_reader',config:{supplements:[]}},  'code_128_reader','ean_reader'],multiple:false},
     patchSize:'medium',halfSample:false,
     locate:true,numOfWorkers:2,frequency:10
   },function(err){
