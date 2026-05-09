@@ -1751,6 +1751,12 @@ async function recarregarContas(){
   }
 }
 
+function abrirDetalhesConta(id){
+  const c=CONTAS.find(x=>x.id===id);
+  if(!c)return;
+  showContaDetail(c.id,c.nome,c.categoria,c.valor,c.vencimento,c.codigoBarras,c.observacoes,c.status);
+}
+
 function showDayDetail(dateStr){
   const modal=document.getElementById('contaDetailModal');
   if(!modal)return;
