@@ -1751,6 +1751,7 @@ function openBarcodeCamera(){
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;box-sizing:border-box';
   overlay.innerHTML=`<div style='color:#fff;font-size:14px;font-weight:600;text-align:center'>📷 Ler código de barras</div><div id='quaggaViewport' style='width:100%;max-width:420px;position:relative;border-radius:10px;overflow:hidden;background:#000'></div><div id='barcodeStatus' style='color:rgba(255,255,255,.7);font-size:12px;text-align:center;max-width:320px'>Iniciando câmera...</div><button onclick='closeBarcodeCamera()' style='font-size:12px;padding:8px 24px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-family:inherit'>Fechar</button>`;
   document.body.appendChild(overlay);
+  window._lastBarcode='';
   Quagga.init({
     inputStream:{type:'LiveStream',target:document.getElementById('quaggaViewport'),constraints:{facingMode:'environment',width:{ideal:640},height:{ideal:480}}},
     decoder:{readers:[{format:'i2of5_reader',config:{supplements:[]}},  'code_128_reader','ean_reader'],multiple:false},
@@ -1773,6 +1774,8 @@ function openBarcodeCamera(){
     if(!code)return;
     const digits=code.replace(/\D/g,'');
     if(digits.length<30)return;
+    if(window._lastBarcode!==digits){window._lastBarcode=digits;return;}
+    window._lastBarcode='';
     console.log('Detected:',code,'format:',result.codeResult.format,'confidence:',result.codeResult.decodedCodes?.map(d=>d.error));
     const detectedCode=code;
     closeBarcodeCamera();
