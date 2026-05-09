@@ -1765,11 +1765,17 @@ function openBarcodeCamera(){
     const code=result.codeResult.code;
     if(!code)return;
     console.log('Detected:',code,'format:',result.codeResult.format,'confidence:',result.codeResult.decodedCodes?.map(d=>d.error));
+    const detectedCode=code;
     closeBarcodeCamera();
-    const inp=document.getElementById('barcodeInput');
-    if(inp)inp.value=code;
     showBarcodeInput=true;
     pgContas();
+    setTimeout(()=>{
+      const inp=document.getElementById('barcodeInput');
+      if(inp){
+        inp.value=detectedCode;
+        inp.dispatchEvent(new Event('input'));
+      }
+    },150);
   });
 }
 
