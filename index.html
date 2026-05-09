@@ -1749,53 +1749,31 @@ function openBarcodeCamera(){
   const overlay=document.createElement('div');
   overlay.id='barcodeCameraOverlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;box-sizing:border-box';
-  overlay.innerHTML=`<div style='color:#fff;font-size:14px;font-weight:600;text-align:center'>📷 Ler código de barras</div><div id='quaggaViewport' style='width:100%;max-width:400px;position:relative;border-radius:10px;overflow:hidden;background:#000;min-height:200px'><video id='barcodeVideo' autoplay playsinline muted style='width:100%;display:block'></video><canvas id='barcodeCanvas' style='position:absolute;top:0;left:0;width:100%;height:100%'></canvas></div><div id='barcodeStatus' style='color:rgba(255,255,255,.7);font-size:12px;text-align:center;max-width:320px'>Iniciando câmera...</div><input type='file' id='barcodeFileInput' accept='image/*' capture='environment' style='display:none'><div style='display:flex;gap:8px;flex-wrap:wrap;justify-content:center'><button id='btnBarcodePhoto' style='font-size:12px;padding:8px 18px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-family:inherit'>📸 Tirar foto</button><button onclick='closeBarcodeCamera()' style='font-size:12px;padding:8px 18px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-family:inherit'>Fechar</button></div>`;
+  overlay.innerHTML=`<div style='color:#fff;font-size:14px;font-weight:600;text-align:center'>📷 Ler código de barras</div><div id='quaggaViewport' style='width:100%;max-width:420px;position:relative;border-radius:10px;overflow:hidden;background:#000;min-height:220px'></div><div id='barcodeStatus' style='color:rgba(255,255,255,.7);font-size:12px;text-align:center;max-width:320px'>Iniciando câmera...</div><button onclick='closeBarcodeCamera()' style='font-size:12px;padding:8px 24px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-family:inherit'>Fechar</button>`;
   document.body.appendChild(overlay);
-  document.getElementById('btnBarcodePhoto').onclick=()=>document.getElementById('barcodeFileInput').click();
-  document.getElementById('barcodeFileInput').onchange=function(e){
-    const file=e.target.files[0];
-    if(!file)return;
-    document.getElementById('barcodeStatus').textContent='Processando imagem...';
-    const img=new Image();
-    const url=URL.createObjectURL(file);
-    img.onload=function(){
-      const canvas=document.createElement('canvas');
-      canvas.width=img.width;canvas.height=img.height;
-      canvas.getContext('2d').drawImage(img,0,0);
-      URL.revokeObjectURL(url);
-      Quagga.decodeSingle({decoder:{readers:['i2of5_reader','code_128_reader','ean_reader','ean_8_reader','codabar_reader']},locate:true,src:canvas.toDataURL()},function(result){
-        if(result&&result.codeResult){
-          const code=result.codeResult.code;
-          closeBarcodeCamera();
-          const inp=document.getElementById('barcodeInput');
-          if(inp)inp.value=code;
-          showBarcodeInput=true;
-          pgContas();
-        }else{
-          document.getElementById('barcodeStatus').textContent='Não foi possível ler. Tente com mais luz ou mais perto.';
-        }
-      });
-    };
-    img.onerror=()=>{document.getElementById('barcodeStatus').textContent='Erro ao carregar imagem.';};
-    img.src=url;
-  };
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}})
-    .then(stream=>{
-      window._barcodeCameraStream=stream;
-      const video=document.getElementById('barcodeVideo');
-      if(!video){stream.getTracks().forEach(t=>t.stop());return;}
-      video.srcObject=stream;
-      video.play();
-      document.getElementById('barcodeStatus').textContent='Câmera ativa. Aponte para o código ou tire uma foto.';
-    })
-    .catch(()=>{
-      document.getElementById('barcodeStatus').textContent='Câmera bloqueada. Use o botão 📸 Tirar foto.';
-    });
+  Quagga.init({
+    inputStream:{type:'LiveStream',target:document.getElementById('quaggaViewport'),constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}},
+    decoder:{readers:['i2of5_reader','code_128_reader','ean_reader','ean_8_reader'],multiple:false},
+    locate:true,numOfWorkers:2,frequency:10
+  },function(err){
+    if(err){const st=document.getElementById('barcodeStatus');if(st)st.textContent='Erro ao iniciar câmera: '+err.message;return;}
+    Quagga.start();
+    const st=document.getElementById('barcodeStatus');if(st)st.textContent='Escaneando... aponte para o código de barras';
+  });
+  Quagga.onDetected(function(result){
+    const code=result.codeResult.code;
+    if(!code)return;
+    closeBarcodeCamera();
+    const inp=document.getElementById('barcodeInput');
+    if(inp)inp.value=code;
+    showBarcodeInput=true;
+    pgContas();
+  });
 }
 
 function closeBarcodeCamera(){
+  try{Quagga.offDetected();Quagga.stop();}catch(e){}
   if(window._barcodeCameraStream){window._barcodeCameraStream.getTracks().forEach(t=>t.stop());window._barcodeCameraStream=null;}
-  if(window._zxingReader){try{window._zxingReader.reset();}catch(e){}window._zxingReader=null;}
   const el=document.getElementById('barcodeCameraOverlay');
   if(el)el.remove();
 }
