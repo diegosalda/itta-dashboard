@@ -1753,7 +1753,8 @@ function openBarcodeCamera(){
   document.body.appendChild(overlay);
   Quagga.init({
     inputStream:{type:'LiveStream',target:document.getElementById('quaggaViewport'),constraints:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}},
-    decoder:{readers:['i2of5_reader','code_128_reader','ean_reader','ean_8_reader'],multiple:false},
+    decoder:{readers:[{format:'i2of5_reader',config:{supplements:[]}},  'code_128_reader','ean_reader'],multiple:false,debug:{showCanvas:true,showPatches:true,showFoundPatches:true,showSkeleton:true,showLabels:true,showPatchLabels:true,showRemainingPatchLabels:true}},
+    patchSize:'medium',halfSample:false,
     locate:true,numOfWorkers:2,frequency:10
   },function(err){
     if(err){const st=document.getElementById('barcodeStatus');if(st)st.textContent='Erro ao iniciar câmera: '+err.message;return;}
@@ -1763,6 +1764,7 @@ function openBarcodeCamera(){
   Quagga.onDetected(function(result){
     const code=result.codeResult.code;
     if(!code)return;
+    console.log('Detected:',code,'format:',result.codeResult.format,'confidence:',result.codeResult.decodedCodes?.map(d=>d.error));
     closeBarcodeCamera();
     const inp=document.getElementById('barcodeInput');
     if(inp)inp.value=code;
