@@ -2006,7 +2006,8 @@ async function pgDRE(){
     const moto=getRow('Motoboy');
     const ifood=getRow('iFood Online');
     const emp=getRow('Empréstimos');
-    const ticket=getRow('Ticket Médio');
+    const pedidos=getRow('Pedidos');
+    const ticketCalc=COLS.map((_,i)=>pedidos[i]>0?fat[i]/pedidos[i]:0);
 
     const nAtivos=fat.reduce((n,v,i)=>v>0?i+1:n,0);
     const mesesAtivos=MESES.slice(0,nAtivos);
@@ -2025,7 +2026,7 @@ async function pgDRE(){
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Faturamento Acumulado</div><div style="font-size:18px;font-weight:700;color:var(--green)">${fmtR(fatTotal)}</div><div style="font-size:10px;color:var(--txt3)">${nAtivos} meses</div></div>
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Despesas Acumuladas</div><div style="font-size:18px;font-weight:700;color:var(--r)">${fmtR(despTotal)}</div><div style="font-size:10px;color:var(--txt3)">${pct(despTotal,fatTotal)} do fat.</div></div>
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Saldo Acumulado</div><div style="font-size:18px;font-weight:700;color:${saldoTotal>=0?'var(--green)':'var(--r)'}">${fmtR(saldoTotal)}</div><div style="font-size:10px;color:var(--txt3)">Margem ${pct(saldoTotal,fatTotal)}</div></div>
-      <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Ticket Médio (último mês)</div><div style="font-size:18px;font-weight:700;color:var(--txt)">${fmtR(ticket[nAtivos-1]||0)}</div><div style="font-size:10px;color:var(--txt3)">Fat. médio ${fmtR(fatMedio)}/mês</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Ticket Médio (último mês)</div><div style="font-size:18px;font-weight:700;color:var(--txt)">${fmtR(ticketCalc[nAtivos-1]||0)}</div><div style="font-size:10px;color:var(--txt3)">Fat. médio ${fmtR(fatMedio)}/mês</div></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Faturamento vs Despesas vs Saldo</div></div><canvas id="dreChart1" height="80"></canvas></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">🧾 Composição dos Custos por Mês</div></div><canvas id="dreChart2" height="100"></canvas></div>
