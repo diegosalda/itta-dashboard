@@ -2068,7 +2068,8 @@ async function pgDRE(){
     new Chart(document.getElementById('dreChart1'),{type:'bar',data:{labels:mesesAtivos,datasets:[
       {label:'Faturamento',data:fatAtivos,backgroundColor:'rgba(34,197,94,.7)'},
       {label:'Despesas',data:despAtivos,backgroundColor:'rgba(239,68,68,.7)'},
-      {label:'Saldo',data:saldoAtivos,type:'line',borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.3,fill:true}
+      {label:'Saldo',data:saldoAtivos,type:'line',borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.3,fill:true},
+      {label:'Tendência Fat.',data:(()=>{const n=fatAtivos.length;if(n<2)return fatAtivos;const xm=(n-1)/2;const ym=fatAtivos.reduce((s,v)=>s+v,0)/n;const slope=fatAtivos.reduce((s,v,i)=>s+(i-xm)*(v-ym),0)/fatAtivos.reduce((s,_,i)=>s+(i-xm)**2,0);const ic=ym-slope*xm;return fatAtivos.map((_,i)=>Math.round(ic+slope*i));})(),type:'line',borderColor:'rgba(34,197,94,.5)',borderDash:[6,3],borderWidth:2,pointRadius:0,fill:false,tension:0}
     ]},options:CO});
 
     new Chart(document.getElementById('dreChart2'),{type:'bar',data:{labels:mesesAtivos,datasets:[
@@ -2135,7 +2136,7 @@ async function toggleDreDetalhe(aba){
               label:cfg.singleItem,
               data:vals.slice(0,nM2),
               backgroundColor:'rgba(34,197,94,.8)'
-            }]
+            },{label:'Tendência',data:(()=>{const n=nM2;if(n<2)return vals.slice(0,n);const xm=(n-1)/2;const ym=vals.slice(0,n).reduce((s,v)=>s+v,0)/n;const sl=vals.slice(0,n).reduce((s,v,i)=>s+(i-xm)*(v-ym),0)/vals.slice(0,n).reduce((s,_,i)=>s+(i-xm)**2,0)||0;const ic=ym-sl*xm;return vals.slice(0,n).map((_,i)=>Math.round(ic+sl*i));})(),type:'line',borderColor:'rgba(255,255,255,.7)',borderDash:[6,3],borderWidth:2,pointRadius:0,fill:false,tension:0}]
           },
           options:{
             responsive:true,
