@@ -1949,15 +1949,14 @@ function salvarUsuarioUI(emailOriginal){
   const data={action:isEdit?'atualizarUsuario':'criarUsuario',nome,email,nivel};
   if(senha)data.senha=senha;
   MODS.forEach(m=>{data[m]=document.getElementById('uMod_'+m)?.checked?'SIM':'NAO';});
-  const params=new URLSearchParams(data);
-  fetch(APPS_URL+'?'+params.toString())
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}})
     .then(()=>{alert(isEdit?'Usuário atualizado!':'Usuário criado!');pgUsuarios();})
     .catch(()=>{alert('Erro ao salvar.');});
 }
 
 function excluirUsuarioUI(email){
   if(!confirm('Excluir usuário '+email+'?'))return;
-  fetch(APPS_URL+'?action=excluirUsuario&email='+encodeURIComponent(email))
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'excluirUsuario',email}),headers:{'Content-Type':'application/json'}})
     .then(()=>{alert('Usuário excluído!');pgUsuarios();})
     .catch(()=>{alert('Erro ao excluir.');});
 }
