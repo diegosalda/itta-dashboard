@@ -1551,6 +1551,7 @@ function entrarNoDashboard() { _appIniciado=true;
 // Aplica permissões no menu
 function aplicarPermissoes() {
   if (!USUARIO_ATUAL) return;
+  if (USUARIO_ATUAL.nivel==='GESTOR') return;
   const mods = USUARIO_ATUAL.modulos;
 
   // Mapeia page → nav-item
