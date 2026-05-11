@@ -333,6 +333,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 const SID='16aLQ5RAKz_WCoA_7KwiGOlisOYrQlRUV17vijXG42TE';
 const BASE=`https://docs.google.com/spreadsheets/d/${SID}/gviz/tq?tqx=out:json&sheet=`;
 const CONTAS_URL='https://script.google.com/macros/s/AKfycbygqQR94_rfB9dpDGnMWjL_9V3vs6a5By-rOAM86saAC1u59BPA1RrZ1-tvQAjkn3wctg/exec';
+const APPS_URL=CONTAS_URL.split('?')[0];
 // Para limitar período padrão de carregamento (últimos 6 meses = ~180 dias)
 // A planilha completa é carregada, filtros são aplicados no cliente
 const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Calabresa Bombay","Calabresitta","Portuguesa","Marguerita","Quatro Queijos","Lombinho Agridoce","Pepperoni","Calabresa com Catupiry","Bela Parma","Calabronx","Gratinata","Jalapepper (muito apimentada)","La Caprina","Baconzola","Brie com Geleia de Pimenta","Bacon à Moda Itta","Nordestina","Atum","Baiana","Brie com Parma","Caipira Cremoso","Calabresa 4 queijos","Calabresa Especial","Camarão com Catupiry","Di Parma","Camarão com Pesto","Camarão Oriental","Imperial","Frango ao Pesto","Corn & Bacon","Marguerita Especial","Mussarela","Lombinho com Catupiry","Pepperoni com Catupiry","Pepperoni Supremo","Chocolate Meio a Meio"];
@@ -1949,14 +1950,14 @@ function salvarUsuarioUI(emailOriginal){
   if(senha)data.senha=senha;
   MODS.forEach(m=>{data[m]=document.getElementById('uMod_'+m)?.checked?'SIM':'NAO';});
   const params=new URLSearchParams(data);
-  fetch(CONTAS_URL+'&'+params.toString())
+  fetch(APPS_URL+'?'+params.toString())
     .then(()=>{alert(isEdit?'Usuário atualizado!':'Usuário criado!');pgUsuarios();})
     .catch(()=>{alert('Erro ao salvar.');});
 }
 
 function excluirUsuarioUI(email){
   if(!confirm('Excluir usuário '+email+'?'))return;
-  fetch(CONTAS_URL+'&action=excluirUsuario&email='+encodeURIComponent(email))
+  fetch(APPS_URL+'?action=excluirUsuario&email='+encodeURIComponent(email))
     .then(()=>{alert('Usuário excluído!');pgUsuarios();})
     .catch(()=>{alert('Erro ao excluir.');});
 }
