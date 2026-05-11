@@ -1961,8 +1961,8 @@ function excluirUsuarioUI(email){
 
 function initUsuariosSheet(){
   if(!confirm('Configurar cabeçalho da aba Usuarios na planilha?'))return;
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'initUsuarios'}),headers:{'Content-Type':'application/json'}})
-    .then(()=>{alert('Planilha configurada! Recarregando...');pgUsuarios();})
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'initUsuarios',migrar:true}),headers:{'Content-Type':'application/json'}})
+    .then(()=>{alert('Estrutura atualizada! Faça login novamente para continuar.');pgUsuarios();})
     .catch(()=>{alert('Erro ao configurar.');});
 }
 
