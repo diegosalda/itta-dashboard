@@ -1481,7 +1481,7 @@ async function fazerLogin() {
   load.style.display='block';
 
   try {
-    const resp = await fetch(USUARIOS_SHEET);
+    const resp = await fetch(USUARIOS_SHEET+'&cachebust='+Date.now());
     const txt  = await resp.text();
     const json = JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     const rows = json.table.rows;
