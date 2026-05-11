@@ -2119,7 +2119,8 @@ async function toggleDreDetalhe(aba){
     }).map(r=>({nome:r.c[cfg.nomeCol]?.v?.toString().trim(),vals:cfg.valCols.map(ci=>parseFloat(r.c[ci]?.v||0)||0)}));
     const nM=Math.max(...itens.map(it=>it.vals.reduce((n,v,i)=>v>0?i+1:n,0)),1);
     const mesesAtivos=MESES_SHORT.slice(0,nM);
-    el.innerHTML='<div class="tw"><table><thead><tr><th>Item</th>'+mesesAtivos.map(m=>'<th style="text-align:right">'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr></thead><tbody>'+itens.map(it=>'<tr><td>'+it.nome+'</td>'+mesesAtivos.map((_,i)=>'<td style="text-align:right;color:var(--txt2)">'+fmtR(it.vals[i])+'</td>').join('')+'<td style="text-align:right;font-weight:700">'+fmtR(it.vals.reduce((s,v)=>s+v,0))+'</td></tr>').join('')+'</tbody></table></div>';
+    const varPct=(curr,prev)=>{if(!prev||prev===0)return '<td></td>';const pct=((curr-prev)/prev*100);const isGood=pct<=0;const color=isGood?'var(--green)':'var(--r)';const sign=pct>=0?'+':'';return '<td style="text-align:right;font-size:10px;color:'+color+'">'+sign+pct.toFixed(1)+'%</td>';};
+    el.innerHTML='<div class="tw"><table><thead><tr><th>Item</th>'+mesesAtivos.map((m,i)=>i===0?'<th style="text-align:right">'+m+'</th>':'<th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th><th style="text-align:right">'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr></thead><tbody>'+itens.map(it=>'<tr><td>'+it.nome+'</td>'+mesesAtivos.map((_,i)=>i===0?'<td style="text-align:right;color:var(--txt2)">'+fmtR(it.vals[i])+'</td>':varPct(it.vals[i],it.vals[i-1])+'<td style="text-align:right;color:var(--txt2)">'+fmtR(it.vals[i])+'</td>').join('')+'<td style="text-align:right;font-weight:700">'+fmtR(it.vals.reduce((s,v)=>s+v,0))+'</td></tr>').join('')+'</tbody></table></div>';
     setTimeout(()=>{
       const canvasId='chart_'+aba;
       if(document.getElementById(canvasId))return;
