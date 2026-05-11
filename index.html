@@ -2029,7 +2029,7 @@ async function pgDRE(){
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Ticket Médio (último mês)</div><div style="font-size:18px;font-weight:700;color:var(--txt)">${fmtR(ticketCalc[nAtivos-1]||0)}</div><div style="font-size:10px;color:var(--txt3)">Fat. médio ${fmtR(fatMedio)}/mês</div></div>
     </div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Faturamento vs Despesas vs Saldo</div></div><canvas id="dreChart1" height="80"></canvas></div>
-    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">🧾 Composição dos Custos por Mês</div></div><canvas id="dreChart2" height="100"></canvas></div>
+    <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">🥧 Composição dos Custos — ${mesesAtivos[nAtivos-1]}</div></div><div style="max-width:500px;margin:0 auto"><canvas id="dreChart2"></canvas></div></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📋 DRE Resumido</div></div><div class="tw"><table>
       <thead><tr><th>Categoria</th>${mesesAtivos.map(m=>`<th style="text-align:right">${m}</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
       <tbody>${[
@@ -2047,7 +2047,17 @@ async function pgDRE(){
         {l:'DESPESAS TOTAIS',d:despAtivos,cl:'var(--r)',bold:true},
         {l:'SALDO/MÊS',d:saldoAtivos,cl:saldoTotal>=0?'var(--green)':'var(--r)',bold:true},
       ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map(v=>`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('')}</tbody>
-    </table></div></div>`;
+    </table></div></div>
+    ${[
+      {titulo:'Custo Administrativo',aba:'custoadm',cor:'rgba(236,72,153,.1)',icone:'🏢'},
+      {titulo:'Custo Operacional',aba:'custooper',cor:'rgba(59,130,246,.1)',icone:'⚙️'},
+      {titulo:'Funcionários',aba:'funcionarios',cor:'rgba(251,146,60,.1)',icone:'👥'},
+      {titulo:'Embalagem',aba:'embalagem',cor:'rgba(168,85,247,.1)',icone:'📦'},
+      {titulo:'Impostos',aba:'imposto',cor:'rgba(99,102,241,.1)',icone:'🏛️'},
+      {titulo:'MKT',aba:'mkt',cor:'rgba(20,184,166,.1)',icone:'📣'},
+      {titulo:'Insumos',aba:'insumos',cor:'rgba(239,68,68,.1)',icone:'🍕'},
+      {titulo:'Empréstimos',aba:'emprestimos',cor:'rgba(156,163,175,.1)',icone:'💳'},
+    ].map(cat=>`<div class="card" style="margin-bottom:14px;border-left:3px solid ${cat.cor.replace('.1)','.8)')}"><div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleDreDetalhe('${cat.aba}')"><div class="card-ttl">${cat.icone} ${cat.titulo}</div><span id="icon_${cat.aba}">▼</span></div><div id="detalhe_${cat.aba}" style="display:none;margin-top:12px"><div style="text-align:center;color:var(--txt3);font-size:12px;padding:20px">⏳ Carregando...</div></div></div>`).join('')}`;
 
     const CO={responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:11}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtR(ctx.raw)}}},scales:{x:{ticks:{color:'var(--txt3)'}},y:{ticks:{color:'var(--txt3)',callback:v=>'R$ '+Math.round(v/1000)+'k'}}}};
 
@@ -2057,20 +2067,58 @@ async function pgDRE(){
       {label:'Saldo',data:saldoAtivos,type:'line',borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',tension:.3,fill:true}
     ]},options:CO});
 
-    new Chart(document.getElementById('dreChart2'),{type:'bar',data:{labels:mesesAtivos,datasets:[
-      {label:'Insumos',data:ins.slice(0,nAtivos),backgroundColor:'rgba(239,68,68,.8)'},
-      {label:'Funcionários',data:func.slice(0,nAtivos),backgroundColor:'rgba(251,146,60,.8)'},
-      {label:'iFood Online',data:ifood.slice(0,nAtivos),backgroundColor:'rgba(234,179,8,.8)'},
-      {label:'Motoboy',data:moto.slice(0,nAtivos),backgroundColor:'rgba(34,197,94,.8)'},
-      {label:'Custo Operacional',data:custoOp.slice(0,nAtivos),backgroundColor:'rgba(59,130,246,.8)'},
-      {label:'Embalagem',data:emb.slice(0,nAtivos),backgroundColor:'rgba(168,85,247,.8)'},
-      {label:'MKT',data:mkt.slice(0,nAtivos),backgroundColor:'rgba(20,184,166,.8)'},
-      {label:'Imposto e Taxas',data:imp.slice(0,nAtivos),backgroundColor:'rgba(99,102,241,.8)'},
-      {label:'Custo Adm',data:custoAdm.slice(0,nAtivos),backgroundColor:'rgba(236,72,153,.8)'},
-      {label:'Empréstimos',data:emp.slice(0,nAtivos),backgroundColor:'rgba(156,163,175,.8)'},
-    ]},options:{...CO,scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}}});
+    const pieData=[
+      {l:'Insumos',v:ins[nAtivos-1],c:'rgba(239,68,68,.85)'},
+      {l:'Funcionários',v:func[nAtivos-1],c:'rgba(251,146,60,.85)'},
+      {l:'iFood Online',v:ifood[nAtivos-1],c:'rgba(234,179,8,.85)'},
+      {l:'Motoboy',v:moto[nAtivos-1],c:'rgba(34,197,94,.85)'},
+      {l:'Custo Operacional',v:custoOp[nAtivos-1],c:'rgba(59,130,246,.85)'},
+      {l:'Embalagem',v:emb[nAtivos-1],c:'rgba(168,85,247,.85)'},
+      {l:'MKT',v:mkt[nAtivos-1],c:'rgba(20,184,166,.85)'},
+      {l:'Imposto e Taxas',v:imp[nAtivos-1],c:'rgba(99,102,241,.85)'},
+      {l:'Custo Adm',v:custoAdm[nAtivos-1],c:'rgba(236,72,153,.85)'},
+      {l:'Empréstimos',v:emp[nAtivos-1],c:'rgba(156,163,175,.85)'},
+    ].filter(d=>d.v>0);
+    new Chart(document.getElementById('dreChart2'),{type:'doughnut',data:{labels:pieData.map(d=>d.l),datasets:[{data:pieData.map(d=>d.v),backgroundColor:pieData.map(d=>d.c),borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'var(--txt)',font:{size:11},padding:12}},tooltip:{callbacks:{label:ctx=>{const v=ctx.raw;const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ctx.label+': '+fmtR(v)+' ('+((v/total)*100).toFixed(1)+')';}}}}}})
 
   }catch(e){mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--r)">Erro ao carregar DRE: '+e.message+'</div>';console.error(e);}
+}
+
+const DRE_ABAS={
+  custoadm:{sheet:'Custo Adm',nomeCol:2,valCols:[3,4,5,6]},
+  custooper:{sheet:'Custo Oper.',nomeCol:7,valCols:[8,9,10,11]},
+  funcionarios:{sheet:'Funcionarios',nomeCol:2,valCols:[3,4,5,6]},
+  embalagem:{sheet:'Embalagem',nomeCol:2,valCols:[3,4,5,6]},
+  imposto:{sheet:'Imposto',nomeCol:1,valCols:[2,3,4,5]},
+  mkt:{sheet:'MKT',nomeCol:7,valCols:[8,9,10,11]},
+  insumos:{sheet:'Insumos',nomeCol:2,valCols:[3,4,5,6]},
+  emprestimos:{sheet:'Emprestimos',nomeCol:7,valCols:[8,9,10,11]},
+};
+
+async function toggleDreDetalhe(aba){
+  const el=document.getElementById('detalhe_'+aba);
+  const icon=document.getElementById('icon_'+aba);
+  if(el.style.display==='block'){el.style.display='none';icon.textContent='▼';return;}
+  el.style.display='block';
+  icon.textContent='▲';
+  if(el.dataset.loaded)return;
+  el.dataset.loaded='1';
+  const cfg=DRE_ABAS[aba];
+  try{
+    const resp=await fetch('https://docs.google.com/spreadsheets/d/'+DRE_SID+'/gviz/tq?tqx=out:json&sheet='+encodeURIComponent(cfg.sheet)+'&cachebust='+Date.now());
+    const txt=await resp.text();
+    const json=JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+    const rows=json.table.rows;
+    const MESES_SHORT=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+    const itens=rows.filter(r=>{
+      const nome=r.c[cfg.nomeCol]?.v?.toString().trim();
+      if(!nome)return false;
+      return cfg.valCols.some(ci=>parseFloat(r.c[ci]?.v||0)>0);
+    }).map(r=>({nome:r.c[cfg.nomeCol]?.v?.toString().trim(),vals:cfg.valCols.map(ci=>parseFloat(r.c[ci]?.v||0)||0)}));
+    const nM=Math.max(...itens.map(it=>it.vals.reduce((n,v,i)=>v>0?i+1:n,0)),1);
+    const mesesAtivos=MESES_SHORT.slice(0,nM);
+    el.innerHTML='<div class="tw"><table><thead><tr><th>Item</th>'+mesesAtivos.map(m=>'<th style="text-align:right">'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr></thead><tbody>'+itens.map(it=>'<tr><td>'+it.nome+'</td>'+mesesAtivos.map((_,i)=>'<td style="text-align:right;color:var(--txt2)">'+fmtR(it.vals[i])+'</td>').join('')+'<td style="text-align:right;font-weight:700">'+fmtR(it.vals.reduce((s,v)=>s+v,0))+'</td></tr>').join('')+'</tbody></table></div>';
+  }catch(e){el.innerHTML='<div style="color:var(--r);font-size:12px">Erro ao carregar: '+e.message+'</div>';}
 }
 
 // ================================================================
