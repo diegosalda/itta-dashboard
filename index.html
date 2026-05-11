@@ -2257,6 +2257,8 @@ Seja específico com números, percentuais e comparações mês a mês. Identifi
       headers:{'Content-Type':'text/plain'}
     });
     const aiData=await aiResp.json();
+    console.log('AI Response:', JSON.stringify(aiData));
+    if(aiData.error) throw new Error(JSON.stringify(aiData.error));
     const analysis=aiData.content?.[0]?.text||"Erro ao gerar análise.";
 
     const html=analysis
