@@ -2120,6 +2120,33 @@ async function toggleDreDetalhe(aba){
       const mesesAtivos2=MESES_SHORT2.slice(0,nM2);
       const varPct2=(curr,prev)=>{if(!prev||prev===0)return '<td></td>';const pct=((curr-prev)/prev*100);const isGood=pct<=0;const color=isGood?'var(--green)':'var(--r)';const sign=pct>=0?'+':'';return '<td style="text-align:right;font-size:10px;color:'+color+'">'+sign+pct.toFixed(1)+'%</td>';};
       el.innerHTML='<div class="tw"><table><thead><tr><th>Item</th>'+mesesAtivos2.map((m,i)=>i===0?'<th style="text-align:right">'+m+'</th>':'<th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th><th style="text-align:right">'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr></thead><tbody><tr><td>'+cfg.singleItem+'</td>'+mesesAtivos2.map((m,i)=>i===0?'<td style="text-align:right;color:var(--txt2)">'+fmtR(vals[i])+'</td>':varPct2(vals[i],vals[i-1])+'<td style="text-align:right;color:var(--txt2)">'+fmtR(vals[i])+'</td>').join('')+'<td style="text-align:right;font-weight:700">'+fmtR(vals.slice(0,nM2).reduce((s,v)=>s+v,0))+'</td></tr></tbody></table></div>';
+      setTimeout(()=>{
+        const canvasId='chart_'+aba;
+        if(document.getElementById(canvasId))return;
+        const chartDiv=document.createElement('div');
+        chartDiv.style.cssText='margin-bottom:12px';
+        chartDiv.innerHTML='<canvas id="'+canvasId+'" height="60"></canvas>';
+        el.insertBefore(chartDiv,el.firstChild);
+        new Chart(document.getElementById(canvasId),{
+          type:'bar',
+          data:{
+            labels:mesesAtivos2,
+            datasets:[{
+              label:cfg.singleItem,
+              data:vals.slice(0,nM2),
+              backgroundColor:'rgba(34,197,94,.8)'
+            }]
+          },
+          options:{
+            responsive:true,
+            plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtR(ctx.raw)}}},
+            scales:{
+              x:{ticks:{color:'var(--txt3)'}},
+              y:{ticks:{color:'var(--txt3)',callback:v=>'R$ '+Math.round(v/1000)+'k'}}
+            }
+          }
+        });
+      },50);
     }catch(e){el.innerHTML='<div style="color:var(--r);font-size:12px">Erro ao carregar: '+e.message+'</div>';}
     return;
   }
