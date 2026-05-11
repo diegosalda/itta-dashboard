@@ -2031,22 +2031,25 @@ async function pgDRE(){
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Faturamento vs Despesas vs Saldo</div></div><canvas id="dreChart1" height="80"></canvas></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Evolução dos Custos por Categoria</div></div><canvas id="dreChart2" height="120"></canvas></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📋 DRE Resumido</div></div><div class="tw"><table>
-      <thead><tr><th>Categoria</th>${mesesAtivos.map(m=>`<th style="text-align:right">${m}</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
-      <tbody>${[
-        {l:'Faturamento',d:fatAtivos,cl:'var(--green)',bold:true},
-        {l:'Custo Adm',d:custoAdm.slice(0,nAtivos)},
-        {l:'Custo Operacional',d:custoOp.slice(0,nAtivos)},
-        {l:'Embalagem',d:emb.slice(0,nAtivos)},
-        {l:'Funcionários',d:func.slice(0,nAtivos)},
-        {l:'Imposto e Taxas',d:imp.slice(0,nAtivos)},
-        {l:'Insumos',d:ins.slice(0,nAtivos)},
-        {l:'MKT',d:mkt.slice(0,nAtivos)},
-        {l:'Motoboy',d:moto.slice(0,nAtivos)},
-        {l:'iFood Online',d:ifood.slice(0,nAtivos)},
-        {l:'Empréstimos',d:emp.slice(0,nAtivos)},
-        {l:'DESPESAS TOTAIS',d:despAtivos,cl:'var(--r)',bold:true},
-        {l:'SALDO/MÊS',d:saldoAtivos,cl:saldoTotal>=0?'var(--green)':'var(--r)',bold:true},
-      ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map(v=>`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Categoria</th>${mesesAtivos.map((m,i)=>i===0?`<th style="text-align:right">${m}</th>`:`<th style="text-align:right">${m}</th><th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
+      <tbody>${(()=>{
+        const varPct=(curr,prev,invert=false)=>{if(!prev||prev===0)return '<td></td>';const pct=((curr-prev)/prev*100);const isGood=invert?(pct>=0):(pct<=0);const color=isGood?'var(--green)':'var(--r)';const sign=pct>=0?'+':'';return '<td style="text-align:right;font-size:10px;color:'+color+'">'+sign+pct.toFixed(1)+'%</td>';};
+        return [
+          {l:'Faturamento',d:fatAtivos,cl:'var(--green)',bold:true,inv:true},
+          {l:'Custo Adm',d:custoAdm.slice(0,nAtivos)},
+          {l:'Custo Operacional',d:custoOp.slice(0,nAtivos)},
+          {l:'Embalagem',d:emb.slice(0,nAtivos)},
+          {l:'Funcionários',d:func.slice(0,nAtivos)},
+          {l:'Imposto e Taxas',d:imp.slice(0,nAtivos)},
+          {l:'Insumos',d:ins.slice(0,nAtivos)},
+          {l:'MKT',d:mkt.slice(0,nAtivos)},
+          {l:'Motoboy',d:moto.slice(0,nAtivos)},
+          {l:'iFood Online',d:ifood.slice(0,nAtivos)},
+          {l:'Empréstimos',d:emp.slice(0,nAtivos)},
+          {l:'DESPESAS TOTAIS',d:despAtivos,cl:'var(--r)',bold:true},
+          {l:'SALDO/MÊS',d:saldoAtivos,cl:saldoTotal>=0?'var(--green)':'var(--r)',bold:true,inv:true},
+        ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map((v,i)=>i===0?`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`:`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>${varPct(v,row.d[i-1],row.inv||false)}`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('');
+      })()}</tbody>
     </table></div></div>
     ${[
       {titulo:'Custo Administrativo',aba:'custoadm',cor:'rgba(236,72,153,.1)',icone:'🏢'},
@@ -2124,7 +2127,7 @@ async function toggleDreDetalhe(aba){
       chartDiv.style.cssText='margin-bottom:12px';
       chartDiv.innerHTML='<canvas id="'+canvasId+'" height="60"></canvas>';
       el.insertBefore(chartDiv,el.firstChild);
-      new Chart(document.getElementById(canvasId),{type:'bar',data:{labels:mesesAtivos,datasets:itens.map((it,idx)=>({label:it.nome,data:mesesAtivos.map((_,i)=>it.vals[i]),backgroundColor:'hsl('+(idx*37)%360+',70%,55%)'}))},options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtR(ctx.raw)}}},scales:{x:{stacked:true,ticks:{color:'var(--txt3)'}},y:{stacked:true,ticks:{color:'var(--txt3)',callback:v=>'R$ '+Math.round(v/1000)+'k'}}}}});
+      new Chart(document.getElementById(canvasId),{type:'bar',data:{labels:mesesAtivos,datasets:itens.map((it,idx)=>({label:it.nome,data:mesesAtivos.map((_,i)=>it.vals[i]),backgroundColor:'hsl('+(idx*37)%360+',70%,55%)'}))},options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtR(ctx.raw)}}},scales:{x:{stacked:false,ticks:{color:'var(--txt3)'}},y:{stacked:false,ticks:{color:'var(--txt3)',callback:v=>'R$ '+Math.round(v/1000)+'k'}}}}});
     },50);
   }catch(e){el.innerHTML='<div style="color:var(--r);font-size:12px">Erro ao carregar: '+e.message+'</div>';}
 }
