@@ -2251,11 +2251,8 @@ Forneça a análise em formato estruturado com estas seções usando markdown:
 
 Seja específico com números, percentuais e comparações mês a mês. Identifique tendências, anomalias e oportunidades de melhoria de margem.`;
 
-    const aiResp=await fetch(APPS_URL,{
-      method:'POST',
-      body:'action=analisarIA&prompt='+encodeURIComponent(prompt),
-      headers:{'Content-Type':'text/plain'}
-    });
+    const aiUrl=APPS_URL+'?action=analisarIA&prompt='+encodeURIComponent(prompt.substring(0,2000));
+    const aiResp=await fetch(aiUrl);
     const aiData=await aiResp.json();
     console.log('AI Response:', JSON.stringify(aiData));
     if(aiData.error) throw new Error(JSON.stringify(aiData.error));
