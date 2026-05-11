@@ -2095,7 +2095,7 @@ const DRE_ABAS={
   imposto:{sheet:'Imposto',nomeCol:1,valCols:[2,3,4,5]},
   mkt:{sheet:'MKT',nomeCol:7,valCols:[8,9,10,11]},
   insumos:{sheet:'Insumos',nomeCol:2,valCols:[3,4,5,6]},
-  motoboy:{sheet:'Motoboy',nomeCol:2,valCols:[3,4,5,6]},
+  motoboy:{sheet:'Motoboy',nomeCol:null,valCols:[3,4,5,6],singleItem:'Motoboy'},
   emprestimos:{sheet:'Emprestimos',nomeCol:7,valCols:[8,9,10,11]},
 };
 
@@ -2108,6 +2108,21 @@ async function toggleDreDetalhe(aba){
   if(el.dataset.loaded)return;
   el.dataset.loaded='1';
   const cfg=DRE_ABAS[aba];
+  if(cfg.singleItem){
+    try{
+      const resp2=await fetch('https://docs.google.com/spreadsheets/d/'+DRE_SID+'/gviz/tq?tqx=out:json&sheet='+encodeURIComponent(cfg.sheet)+'&cachebust='+Date.now());
+      const txt2=await resp2.text();
+      const json2=JSON.parse(txt2.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      const rows2=json2.table.rows;
+      const MESES_SHORT2=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+      const vals=cfg.valCols.map(ci=>parseFloat(rows2[1]?.c[ci]?.v||0)||0);
+      const nM2=vals.reduce((n,v,i)=>v>0?i+1:n,0);
+      const mesesAtivos2=MESES_SHORT2.slice(0,nM2);
+      const varPct2=(curr,prev)=>{if(!prev||prev===0)return '<td></td>';const pct=((curr-prev)/prev*100);const isGood=pct<=0;const color=isGood?'var(--green)':'var(--r)';const sign=pct>=0?'+':'';return '<td style="text-align:right;font-size:10px;color:'+color+'">'+sign+pct.toFixed(1)+'%</td>';};
+      el.innerHTML='<div class="tw"><table><thead><tr><th>Item</th>'+mesesAtivos2.map((m,i)=>i===0?'<th style="text-align:right">'+m+'</th>':'<th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th><th style="text-align:right">'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr></thead><tbody><tr><td>'+cfg.singleItem+'</td>'+mesesAtivos2.map((m,i)=>i===0?'<td style="text-align:right;color:var(--txt2)">'+fmtR(vals[i])+'</td>':varPct2(vals[i],vals[i-1])+'<td style="text-align:right;color:var(--txt2)">'+fmtR(vals[i])+'</td>').join('')+'<td style="text-align:right;font-weight:700">'+fmtR(vals.slice(0,nM2).reduce((s,v)=>s+v,0))+'</td></tr></tbody></table></div>';
+    }catch(e){el.innerHTML='<div style="color:var(--r);font-size:12px">Erro ao carregar: '+e.message+'</div>';}
+    return;
+  }
   try{
     const resp=await fetch('https://docs.google.com/spreadsheets/d/'+DRE_SID+'/gviz/tq?tqx=out:json&sheet='+encodeURIComponent(cfg.sheet)+'&cachebust='+Date.now());
     const txt=await resp.text();
