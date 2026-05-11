@@ -2251,14 +2251,10 @@ Forneça a análise em formato estruturado com estas seções usando markdown:
 
 Seja específico com números, percentuais e comparações mês a mês. Identifique tendências, anomalias e oportunidades de melhoria de margem.`;
 
-    const aiResp=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:1500,
-        messages:[{role:"user",content:prompt}]
-      })
+    const aiResp=await fetch(CONTAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'analisarIA',prompt:prompt})
     });
     const aiData=await aiResp.json();
     const analysis=aiData.content?.[0]?.text||"Erro ao gerar análise.";
