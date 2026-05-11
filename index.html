@@ -2253,6 +2253,8 @@ Seja específico com números, percentuais e comparações mês a mês. Identifi
 
     const aiResp=await fetch(CONTAS_URL,{
       method:'POST',
+      mode:'cors',
+      redirect:'follow',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'analisarIA',prompt:prompt})
     });
