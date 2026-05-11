@@ -1909,12 +1909,13 @@ async function pgUsuarios(){
       contas:(r.c[10]?.v||'').toUpperCase()==='SIM',
       financeiro:(r.c[11]?.v||'').toUpperCase()==='SIM',
       tabela:(r.c[12]?.v||'').toUpperCase()==='SIM',
-      nivel:(r.c[13]?.v||'USUARIO').toUpperCase(),
+      nivel:(()=>{const n=(r.c[13]?.v||'').toUpperCase();if(n==='GESTOR')return'GESTOR';const em=(r.c[1]?.v||'').toLowerCase().trim();return(!n&&USUARIO_ATUAL?.admin&&em===USUARIO_ATUAL?.email)?'GESTOR':'USUARIO';})(),
     })).filter(r=>r.email);
     window._usuariosCache=rows;
     const MODS=[{k:'analytics',l:'Visão geral'},{k:'sabores',l:'Sabores'},{k:'horarios',l:'Horários'},{k:'dias',l:'Dias'},{k:'bairros',l:'Bairros'},{k:'clientes',l:'Clientes'},{k:'cupons',l:'Cupons'},{k:'contas',l:'Contas a Pagar'},{k:'financeiro',l:'Financeiro'},{k:'tabela',l:'Tabela'}];
     const tableRows=rows.map(u=>`<tr style="cursor:pointer" onclick="editarUsuario('${u.email.replace(/'/g,"\\'")}')"><td>${u.nome}</td><td style="color:var(--txt3)">${u.email}</td><td><span style="background:${u.nivel==='GESTOR'?'rgba(99,102,241,.15)':'rgba(34,197,94,.15)'};color:${u.nivel==='GESTOR'?'#6366f1':'var(--green)'};border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">${u.nivel==='GESTOR'?'Gestor Geral':'Usuário'}</span></td><td style="text-align:left">${MODS.filter(m=>u[m.k]).map(m=>m.l).join(', ')||'Nenhum'}</td><td style="text-align:center" onclick="event.stopPropagation()"><button onclick="excluirUsuarioUI('${u.email.replace(/'/g,"\\'")}\")" style="font-size:11px;padding:3px 8px;border-radius:5px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-family:inherit">Excluir</button></td></tr>`).join('');
-    mc.innerHTML=`<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="font-size:16px;font-weight:700;color:var(--txt)">👤 Gestão de Usuários</div><button onclick="abrirFormUsuario()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">+ Novo usuário</button></div><div class="tw"><table><thead><tr><th>Nome</th><th>Email</th><th>Nível</th><th>Módulos</th><th style="text-align:center">Ações</th></tr></thead><tbody>${tableRows||'<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Nenhum usuário cadastrado</td></tr>'}</tbody></table></div></div><div id="usuarioFormArea"></div>`;
+    const setupBtn=rows.length===0?`<button onclick="initUsuariosSheet()" style="font-size:11px;padding:4px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt3);cursor:pointer;font-family:inherit;margin-left:8px">⚙️ Configurar planilha</button>`:'';
+    mc.innerHTML=`<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="display:flex;align-items:center;gap:8px"><div style="font-size:16px;font-weight:700;color:var(--txt)">👤 Gestão de Usuários</div>${setupBtn}</div><button onclick="abrirFormUsuario()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">+ Novo usuário</button></div><div class="tw"><table><thead><tr><th>Nome</th><th>Email</th><th>Nível</th><th>Módulos</th><th style="text-align:center">Ações</th></tr></thead><tbody>${tableRows||'<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:20px">Nenhum usuário cadastrado</td></tr>'}</tbody></table></div></div><div id="usuarioFormArea"></div>`;
   }catch(e){mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--r)">Erro ao carregar usuários.</div>';}
 }
 
@@ -1956,6 +1957,13 @@ function excluirUsuarioUI(email){
   fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'excluirUsuario',email}),headers:{'Content-Type':'application/json'}})
     .then(()=>{alert('Usuário excluído!');pgUsuarios();})
     .catch(()=>{alert('Erro ao excluir.');});
+}
+
+function initUsuariosSheet(){
+  if(!confirm('Configurar cabeçalho da aba Usuarios na planilha?'))return;
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'initUsuarios'}),headers:{'Content-Type':'application/json'}})
+    .then(()=>{alert('Planilha configurada! Recarregando...');pgUsuarios();})
+    .catch(()=>{alert('Erro ao configurar.');});
 }
 
 // ================================================================
