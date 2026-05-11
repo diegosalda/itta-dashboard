@@ -1488,8 +1488,8 @@ async function fazerLogin() {
 
     let usuarioEncontrado = null;
     for (const row of rows) {
-      const rEmail = (row.c[1]?.v||'').toLowerCase().trim();
-      const rSenha = (row.c[2]?.v||'').trim();
+      const rEmail = String(row.c[1]?.v||'').toLowerCase().trim();
+      const rSenha = String(row.c[2]?.v||'').trim();
       if (rEmail === email && rSenha === senha) {
         usuarioEncontrado = {
           nome:     row.c[0]?.v || 'Usuário',
