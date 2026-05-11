@@ -1947,21 +1947,21 @@ function salvarUsuarioUI(emailOriginal){
   const data={action:isEdit?'atualizarUsuario':'criarUsuario',nome,email,nivel};
   if(senha)data.senha=senha;
   MODS.forEach(m=>{data[m]=document.getElementById('uMod_'+m)?.checked?'SIM':'NAO';});
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}})
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:new URLSearchParams(data).toString()})
     .then(()=>{alert(isEdit?'Usuário atualizado!':'Usuário criado!');pgUsuarios();})
     .catch(()=>{alert('Erro ao salvar.');});
 }
 
 function excluirUsuarioUI(email){
   if(!confirm('Excluir usuário '+email+'?'))return;
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'excluirUsuario',email}),headers:{'Content-Type':'application/json'}})
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:new URLSearchParams({action:'excluirUsuario',email}).toString()})
     .then(()=>{alert('Usuário excluído!');pgUsuarios();})
     .catch(()=>{alert('Erro ao excluir.');});
 }
 
 function initUsuariosSheet(){
   if(!confirm('Configurar cabeçalho da aba Usuarios na planilha?'))return;
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'initUsuarios',migrar:true}),headers:{'Content-Type':'application/json'}})
+  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:new URLSearchParams({action:'initUsuarios',migrar:'true'}).toString()})
     .then(()=>{alert('Estrutura atualizada! Faça login novamente para continuar.');pgUsuarios();})
     .catch(()=>{alert('Erro ao configurar.');});
 }
