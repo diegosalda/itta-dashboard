@@ -2031,7 +2031,7 @@ async function pgDRE(){
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Faturamento vs Despesas vs Saldo</div></div><canvas id="dreChart1" height="80"></canvas></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📊 Evolução dos Custos por Categoria</div></div><canvas id="dreChart2" height="120"></canvas></div>
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div class="card-ttl">📋 DRE Resumido</div></div><div class="tw"><table>
-      <thead><tr><th>Categoria</th>${mesesAtivos.map((m,i)=>i===0?`<th style="text-align:right">${m}</th>`:`<th style="text-align:right">${m}</th><th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
+      <thead><tr><th>Categoria</th>${mesesAtivos.map((m,i)=>i===0?`<th style="text-align:right">${m}</th>`:`<th style="text-align:right;font-size:10px;color:var(--txt3)">var%</th><th style="text-align:right">${m}</th>`).join('')}<th style="text-align:right">Total</th></tr></thead>
       <tbody>${(()=>{
         const varPct=(curr,prev,invert=false)=>{if(!prev||prev===0)return '<td></td>';const pct=((curr-prev)/prev*100);const isGood=invert?(pct>=0):(pct<=0);const color=isGood?'var(--green)':'var(--r)';const sign=pct>=0?'+':'';return '<td style="text-align:right;font-size:10px;color:'+color+'">'+sign+pct.toFixed(1)+'%</td>';};
         return [
@@ -2048,7 +2048,7 @@ async function pgDRE(){
           {l:'Empréstimos',d:emp.slice(0,nAtivos)},
           {l:'DESPESAS TOTAIS',d:despAtivos,cl:'var(--r)',bold:true},
           {l:'SALDO/MÊS',d:saldoAtivos,cl:saldoTotal>=0?'var(--green)':'var(--r)',bold:true,inv:true},
-        ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map((v,i)=>i===0?`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`:`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>${varPct(v,row.d[i-1],row.inv||false)}`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('');
+        ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map((v,i)=>i===0?`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`:`${varPct(v,row.d[i-1],row.inv||false)}<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('');
       })()}</tbody>
     </table></div></div>
     ${[
