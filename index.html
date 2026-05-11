@@ -1485,6 +1485,7 @@ async function fazerLogin() {
     const txt  = await resp.text();
     const json = JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     const rows = json.table.rows;
+    console.log('Total rows from sheet:',rows.length,rows.map(r=>r.c[1]?.v));
 
     let usuarioEncontrado = null;
     for (const row of rows) {
