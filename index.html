@@ -238,6 +238,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .sfi-sub{font-size:9px;color:var(--txt3);margin-top:1px}
 .sfi-val{font-size:13px;font-weight:800;color:var(--green);flex-shrink:0}
 
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'></script>
 </head>
@@ -2022,6 +2023,10 @@ async function pgDRE(){
     const pct=(a,b)=>b>0?((a/b)*100).toFixed(1)+'%':'–';
 
     mc.innerHTML=`
+    <div style='display:flex;justify-content:flex-end;margin-bottom:14px'>
+      <button onclick='analisarDREcomIA()' style='font-size:13px;padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:8px'>🤖 Analisar com IA</button>
+    </div>
+    <div id='dreAIPanel' style='display:none;margin-bottom:14px'></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Faturamento Acumulado</div><div style="font-size:18px;font-weight:700;color:var(--green)">${fmtR(fatTotal)}</div><div style="font-size:10px;color:var(--txt3)">${nAtivos} meses</div></div>
       <div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Despesas Acumuladas</div><div style="font-size:18px;font-weight:700;color:var(--r)">${fmtR(despTotal)}</div><div style="font-size:10px;color:var(--txt3)">${pct(despTotal,fatTotal)} do fat.</div></div>
@@ -2176,6 +2181,101 @@ async function toggleDreDetalhe(aba){
       new Chart(document.getElementById(canvasId),{type:'bar',data:{labels:mesesAtivos,datasets:itens.map((it,idx)=>({label:it.nome,data:mesesAtivos.map((_,i)=>it.vals[i]),backgroundColor:'hsl('+(idx*37)%360+',70%,55%)'}))},options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtR(ctx.raw)}}},scales:{x:{stacked:false,ticks:{color:'var(--txt3)'}},y:{stacked:false,ticks:{color:'var(--txt3)',callback:v=>'R$ '+Math.round(v/1000)+'k'}}}}});
     },50);
   }catch(e){el.innerHTML='<div style="color:var(--r);font-size:12px">Erro ao carregar: '+e.message+'</div>';}
+}
+
+async function analisarDREcomIA(){
+  const panel=document.getElementById('dreAIPanel');
+  if(!panel)return;
+  panel.style.display='block';
+  panel.innerHTML='<div class="card"><div style="display:flex;align-items:center;gap:10px;padding:20px"><div style="width:20px;height:20px;border:3px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite"></div><span style="color:var(--txt3)">Analisando dados com IA...</span></div></div>';
+
+  const MESES=["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const COLS=[5,7,9,11,13,15,17,19,21,23,25,27];
+
+  try{
+    const resp=await fetch(DRE_URL+"&cachebust="+Date.now());
+    const txt=await resp.text();
+    const json=JSON.parse(txt.replace(/^[^\(]+\(/,"").replace(/\);?$/,""));
+    const rows=json.table.rows;
+    const getRow=label=>{
+      const r=rows.find(r=>r.c[4]?.v?.toString().trim()===label.trim());
+      if(!r)return COLS.map(()=>0);
+      return COLS.map(ci=>parseFloat(r.c[ci]?.v||0)||0);
+    };
+    const fat=getRow("Faturamento");
+    const desp=getRow("DESPESAS TOTAIS");
+    const saldo=getRow("SALDO/MÊS");
+    const ins=getRow("Insumos");
+    const func=getRow("Funcionários");
+    const mkt=getRow("MKT");
+    const moto=getRow("Motoboy");
+    const ifood=getRow("iFood Online");
+    const emp=getRow("Empréstimos");
+    const pedidos=getRow("Pedidos");
+    const nAtivos=fat.reduce((n,v,i)=>v>0?i+1:n,0);
+    const mesesAtivos=MESES.slice(0,nAtivos);
+
+    const formatMes=(arr)=>mesesAtivos.map((m,i)=>m+": R$ "+arr[i].toLocaleString("pt-BR",{minimumFractionDigits:2})).join(" | ");
+    const pctFat=(arr)=>mesesAtivos.map((m,i)=>fat[i]>0?m+": "+(arr[i]/fat[i]*100).toFixed(1)+"%":m+": –").join(" | ");
+
+    const prompt=`Você é um consultor financeiro especialista em restaurantes e delivery. Analise os dados financeiros mensais da Itta Pizzaria e forneça uma análise estratégica completa em português.
+
+DADOS DO DRE 2026:
+
+Faturamento: ${formatMes(fat)}
+Despesas Totais: ${formatMes(desp)}
+Saldo/Mês: ${formatMes(saldo)}
+Margem líquida: ${pctFat(saldo)}
+
+CUSTOS:
+Insumos: ${formatMes(ins)} | % fat: ${pctFat(ins)}
+Funcionários: ${formatMes(func)} | % fat: ${pctFat(func)}
+iFood Online: ${formatMes(ifood)} | % fat: ${pctFat(ifood)}
+Motoboy: ${formatMes(moto)} | % fat: ${pctFat(moto)}
+MKT: ${formatMes(mkt)} | % fat: ${pctFat(mkt)}
+Empréstimos: ${formatMes(emp)} | % fat: ${pctFat(emp)}
+
+OPERACIONAL:
+Pedidos/mês: ${mesesAtivos.map((m,i)=>m+": "+Math.round(pedidos[i])).join(" | ")}
+Ticket médio: ${mesesAtivos.map((m,i)=>pedidos[i]>0?m+": R$ "+(fat[i]/pedidos[i]).toFixed(2):m+": –").join(" | ")}
+Custo insumo/pedido: ${mesesAtivos.map((m,i)=>pedidos[i]>0?m+": R$ "+(ins[i]/pedidos[i]).toFixed(2):m+": –").join(" | ")}
+Custo motoboy/pedido: ${mesesAtivos.map((m,i)=>pedidos[i]>0?m+": R$ "+(moto[i]/pedidos[i]).toFixed(2):m+": –").join(" | ")}
+Custo iFood/pedido: ${mesesAtivos.map((m,i)=>pedidos[i]>0?m+": R$ "+(ifood[i]/pedidos[i]).toFixed(2):m+": –").join(" | ")}
+
+Forneça a análise em formato estruturado com estas seções usando markdown:
+## 📊 Resumo Executivo
+## ⚠️ Pontos de Atenção
+## 💡 Oportunidades Identificadas
+## 🔗 Cruzamentos Estratégicos
+## 🎯 Recomendações Prioritárias
+
+Seja específico com números, percentuais e comparações mês a mês. Identifique tendências, anomalias e oportunidades de melhoria de margem.`;
+
+    const aiResp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1500,
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const aiData=await aiResp.json();
+    const analysis=aiData.content?.[0]?.text||"Erro ao gerar análise.";
+
+    const html=analysis
+      .replace(/## (.*)/g,"<h3 style='font-size:14px;font-weight:700;color:var(--txt);margin:16px 0 8px'>$1</h3>")
+      .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+      .replace(/^- (.*)/gm,"<li style='margin:4px 0;color:var(--txt2)'>$1</li>")
+      .replace(/(<li.*<\/li>\n?)+/g,"<ul style='padding-left:20px;margin:8px 0'>$&</ul>")
+      .replace(/\n\n/g,"<br>")
+      .replace(/\n/g," ");
+
+    panel.innerHTML="<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px'><div style='font-size:15px;font-weight:700;color:var(--txt)'>🤖 Análise Estratégica — IA</div><button onclick='document.getElementById(\"dreAIPanel\").style.display=\"none\"' style='background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px'>✕</button></div><div style='font-size:13px;line-height:1.7;color:var(--txt2)'>"+html+"</div></div>";
+
+  }catch(e){
+    panel.innerHTML="<div class='card' style='color:var(--r)'>Erro ao gerar análise: "+e.message+"</div>";
+  }
 }
 
 // ================================================================
