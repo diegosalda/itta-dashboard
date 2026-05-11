@@ -1485,13 +1485,11 @@ async function fazerLogin() {
     const txt  = await resp.text();
     const json = JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     const rows = json.table.rows;
-    console.log('Total rows from sheet:',rows.length,rows.map(r=>r.c[1]?.v));
 
     let usuarioEncontrado = null;
     for (const row of rows) {
       const rEmail = String(row.c[1]?.v||'').toLowerCase().trim();
       const rSenha = String(row.c[2]?.v||'').trim();
-      console.log('Comparing:',JSON.stringify(rEmail),'vs',JSON.stringify(email),'|',JSON.stringify(rSenha),'vs',JSON.stringify(senha));
       if (rEmail === email && rSenha === senha) {
         usuarioEncontrado = {
           nome:     row.c[0]?.v || 'Usuário',
