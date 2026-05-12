@@ -2016,6 +2016,18 @@ async function pgDRE(){
     const despAtivos=desp.slice(0,nAtivos);
     const saldoAtivos=saldo.slice(0,nAtivos);
 
+    // Salva dados globais para os cruzamentos estratégicos
+    window._dreData={
+      meses:mesesAtivos, fat:fatAtivos, desp:despAtivos, saldo:saldoAtivos,
+      ins:ins.slice(0,nAtivos), func:func.slice(0,nAtivos),
+      mkt:mkt.slice(0,nAtivos), moto:moto.slice(0,nAtivos),
+      ifood:ifood.slice(0,nAtivos), emp:emp.slice(0,nAtivos),
+      pedidos:pedidos.slice(0,nAtivos),
+      ticket:pedidos.slice(0,nAtivos).map((p,i)=>p>0?fatAtivos[i]/p:0),
+      custoAdm:custoAdm.slice(0,nAtivos), custoOp:custoOp.slice(0,nAtivos),
+      emb:emb.slice(0,nAtivos), imp:imp.slice(0,nAtivos),
+    };
+
     const fatTotal=fatAtivos.reduce((s,v)=>s+v,0);
     const despTotal=despAtivos.reduce((s,v)=>s+v,0);
     const saldoTotal=saldoAtivos.reduce((s,v)=>s+v,0);
@@ -2056,6 +2068,22 @@ async function pgDRE(){
         ].map(row=>`<tr><td style="font-weight:${row.bold?'700':'400'};color:${row.cl||'var(--txt)'}">${row.bold?'<strong>':''}${row.l}${row.bold?'</strong>':''}</td>${row.d.map((v,i)=>i===0?`<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`:`${varPct(v,row.d[i-1],row.inv||false)}<td style="text-align:right;color:${row.cl||'var(--txt2)'}">${fmtR(v)}</td>`).join('')}<td style="text-align:right;font-weight:700;color:${row.cl||'var(--txt)'}">${fmtR(row.d.reduce((s,v)=>s+v,0))}</td></tr>`).join('');
       })()}</tbody>
     </table></div></div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hdr" style="margin-bottom:16px">
+        <div>
+          <div class="card-ttl">🔗 Cruzamentos Estratégicos</div>
+          <div class="card-sub">Relações entre categorias · identifique padrões e oportunidades</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <button onclick="mostrarCruzamento('insumos_fat')" id="btn_insumos_fat" class="crz-btn" style="font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s">🍕 Insumos × Faturamento × Pedidos</button>
+        <button onclick="mostrarCruzamento('ifood_pedidos')" id="btn_ifood_pedidos" class="crz-btn" style="font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s">📱 iFood × Pedidos × Ticket Médio</button>
+        <button onclick="mostrarCruzamento('motoboy_pedidos')" id="btn_motoboy_pedidos" class="crz-btn" style="font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s">🛵 Motoboy × Pedidos</button>
+        <button onclick="mostrarCruzamento('mkt_fat')" id="btn_mkt_fat" class="crz-btn" style="font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s">📣 MKT × Faturamento</button>
+        <button onclick="mostrarCruzamento('saldo_caixa')" id="btn_saldo_caixa" class="crz-btn" style="font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;grid-column:1/-1">💰 Saldo × Dividendos × Caixa</button>
+      </div>
+      <div id="cruzamentoPainel" style="display:none;margin-top:4px;border-top:1px solid var(--border);padding-top:14px"></div>
+    </div>
     ${[
       {titulo:'Custo Administrativo',aba:'custoadm',cor:'rgba(236,72,153,.1)',icone:'🏢'},
       {titulo:'Custo Operacional',aba:'custooper',cor:'rgba(59,130,246,.1)',icone:'⚙️'},
@@ -2280,6 +2308,399 @@ Seja específico com números, percentuais e comparações mês a mês. Identifi
 
 // ================================================================
 
+// ================================================================
+// CRUZAMENTOS ESTRATÉGICOS DRE
+
+let _cruzamentoAtivo = null;
+
+function mostrarCruzamento(tipo) {
+  const painel = document.getElementById('cruzamentoPainel');
+  if (!painel) return;
+
+  // Toggle: clica no mesmo fecha
+  if (_cruzamentoAtivo === tipo) {
+    _cruzamentoAtivo = null;
+    painel.style.display = 'none';
+    document.querySelectorAll('.crz-btn').forEach(b => {
+      b.style.background = 'var(--bg3)';
+      b.style.color = 'var(--txt2)';
+      b.style.borderColor = 'var(--border2)';
+    });
+    return;
+  }
+
+  // Destaca botão ativo
+  _cruzamentoAtivo = tipo;
+  document.querySelectorAll('.crz-btn').forEach(b => {
+    b.style.background = 'var(--bg3)';
+    b.style.color = 'var(--txt2)';
+    b.style.borderColor = 'var(--border2)';
+  });
+  const btnAtivo = document.getElementById('btn_' + tipo);
+  if (btnAtivo) {
+    btnAtivo.style.background = 'rgba(224,53,53,.15)';
+    btnAtivo.style.color = 'var(--r)';
+    btnAtivo.style.borderColor = 'rgba(224,53,53,.4)';
+  }
+
+  painel.style.display = 'block';
+  const d = window._dreData;
+  if (!d) { painel.innerHTML = '<div style="color:var(--txt3);font-size:12px">Dados não disponíveis.</div>'; return; }
+
+  const n = d.meses.length;
+  const kpi = (label, valor, sub, cor) =>
+    `<div style="background:var(--bg3);border-radius:10px;padding:12px 14px;border:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:3px">${label}</div>
+      <div style="font-size:16px;font-weight:800;color:${cor||'var(--txt)'}">${valor}</div>
+      ${sub ? `<div style="font-size:10px;color:var(--txt3);margin-top:2px">${sub}</div>` : ''}
+    </div>`;
+
+  const varRow = (arr, inv=false) => arr.map((v,i) => {
+    if (i===0) return '–';
+    const prev = arr[i-1]; if (!prev) return '–';
+    const pct = ((v-prev)/prev*100);
+    const good = inv ? pct>=0 : pct<=0;
+    return `<span style="color:${good?'var(--green)':'var(--r)'}">${pct>=0?'+':''}${pct.toFixed(1)}%</span>`;
+  });
+
+  const buildTable = (headers, rowsData) => {
+    const ths = headers.map(h=>`<th style="text-align:right;font-size:9px;white-space:nowrap">${h}</th>`).join('');
+    const bodyRows = rowsData.map(({label, data, fmt: fmtFn, inv, bold, color}) => {
+      const fmtCell = fmtFn || fmtR;
+      const vars = varRow(data, inv);
+      const cells = data.map((v,i) =>
+        `<td style="text-align:right;font-size:11px;color:${color||'var(--txt2)'}${bold?';font-weight:700':''}">${fmtCell(v)}</td>` +
+        (i < data.length-1 ? `<td style="text-align:right;font-size:10px">${vars[i+1]}</td>` : '')
+      ).join('');
+      return `<tr><td style="font-size:11px;font-weight:${bold?'700':'500'};color:${color||'var(--txt)'};white-space:nowrap">${label}</td>${cells}</tr>`;
+    }).join('');
+    return `<div class="tw" style="margin-top:12px"><table>
+      <thead><tr><th></th>${ths}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table></div>`;
+  };
+
+  const insightBox = (items) =>
+    `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+      ${items.map(({icon,text,cor}) =>
+        `<div style="background:${cor||'rgba(59,130,246,.1)'};border:1px solid ${cor||'rgba(59,130,246,.2)'};border-radius:8px;padding:8px 12px;font-size:11px;color:var(--txt2);flex:1;min-width:200px">
+          <span style="font-size:13px;margin-right:6px">${icon}</span>${text}
+        </div>`
+      ).join('')}
+    </div>`;
+
+  const pct = (a, b) => b > 0 ? (a/b*100).toFixed(1)+'%' : '–';
+  const avg = arr => arr.length ? (arr.reduce((s,v)=>s+v,0)/arr.length) : 0;
+
+  // ── 1. INSUMOS × FATURAMENTO × PEDIDOS ──────────────────────
+  if (tipo === 'insumos_fat') {
+    const custoPedido = d.pedidos.map((p,i) => p>0 ? d.ins[i]/p : 0);
+    const pctFat = d.ins.map((v,i) => d.fat[i]>0 ? v/d.fat[i]*100 : 0);
+    const mediaIns = avg(pctFat).toFixed(1);
+    const melhorMes = d.meses[pctFat.indexOf(Math.min(...pctFat))];
+    const piorMes = d.meses[pctFat.indexOf(Math.max(...pctFat))];
+
+    // Gráfico dual-axis via dois datasets
+    const chartId = 'crz_chart_' + tipo;
+    const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${kpi('Custo médio de insumo/pedido', fmtR(avg(custoPedido.filter(v=>v>0))), 'média do período', 'var(--orange)')}
+      ${kpi('% médio do faturamento', mediaIns+'%', 'referência saudável: 25–35%', pctFat.some(v=>v>35)?'var(--r)':'var(--green)')}
+      ${kpi('Melhor eficiência', melhorMes, 'menor % de insumos/fat', 'var(--green)')}
+    </div>`;
+
+    painel.innerHTML = kpis +
+      `<canvas id="${chartId}" height="80" style="margin-bottom:12px"></canvas>` +
+      buildTable(
+        d.meses.flatMap((m,i) => i<n-1 ? [m,'→'] : [m]),
+        [
+          {label:'Faturamento', data:d.fat, inv:true, color:'var(--green)'},
+          {label:'Insumos (R$)', data:d.ins, color:'var(--r)'},
+          {label:'Insumos / Fat', data:pctFat, fmt:v=>v.toFixed(1)+'%', color:'var(--orange)'},
+          {label:'Custo / Pedido', data:custoPedido, color:'var(--txt2)'},
+        ]
+      ) +
+      insightBox([
+        {icon:'📊', text:`<b>Pior mês:</b> ${piorMes} com ${Math.max(...pctFat).toFixed(1)}% do faturamento em insumos`, cor:'rgba(239,68,68,.12)'},
+        {icon:'✅', text:`<b>Melhor mês:</b> ${melhorMes} com ${Math.min(...pctFat).toFixed(1)}% — use como referência de eficiência`, cor:'rgba(34,197,94,.12)'},
+        {icon:'💡', text:'Custo de insumo por pedido revela se o volume está diluindo ou pressionando o CMV', cor:'rgba(59,130,246,.12)'},
+      ]);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(chartId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: d.meses,
+          datasets: [
+            {label:'Faturamento', data:d.fat, backgroundColor:'rgba(34,197,94,.5)', yAxisID:'y'},
+            {label:'Insumos', data:d.ins, backgroundColor:'rgba(239,68,68,.7)', yAxisID:'y'},
+            {label:'% Insumos/Fat', data:pctFat, type:'line', borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.1)', fill:false, tension:.3, borderWidth:2.5, pointRadius:4, yAxisID:'y2'},
+          ]
+        },
+        options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}}},scales:{
+          y:{ticks:{color:'var(--txt3)',callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},
+          y2:{position:'right',ticks:{color:'var(--orange)',callback:v=>v.toFixed(0)+'%'},grid:{display:false}},
+          x:{ticks:{color:'var(--txt3)'}}
+        }}
+      });
+    }, 50);
+  }
+
+  // ── 2. IFOOD × PEDIDOS × TICKET MÉDIO ──────────────────────
+  else if (tipo === 'ifood_pedidos') {
+    const ifoodPorPedido = d.pedidos.map((p,i) => p>0 ? d.ifood[i]/p : 0);
+    const pctFat = d.ifood.map((v,i) => d.fat[i]>0 ? v/d.fat[i]*100 : 0);
+    const chartId = 'crz_chart_' + tipo;
+
+    const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${kpi('Custo iFood / Pedido', fmtR(avg(ifoodPorPedido.filter(v=>v>0))), 'média — inclui comissão + taxas', 'var(--r)')}
+      ${kpi('% médio do faturamento', avg(pctFat).toFixed(1)+'%', 'referência: 15–20% é alto', avg(pctFat)>20?'var(--r)':'var(--orange)')}
+      ${kpi('Ticket médio (último mês)', fmtR(d.ticket[n-1]||0), d.meses[n-1], 'var(--txt)')}
+    </div>`;
+
+    painel.innerHTML = kpis +
+      `<canvas id="${chartId}" height="80" style="margin-bottom:12px"></canvas>` +
+      buildTable(
+        d.meses.flatMap((m,i) => i<n-1 ? [m,'→'] : [m]),
+        [
+          {label:'Faturamento', data:d.fat, inv:true, color:'var(--green)'},
+          {label:'Pedidos', data:d.pedidos, fmt:v=>Math.round(v).toString(), inv:true, color:'var(--blue)'},
+          {label:'iFood (R$)', data:d.ifood, color:'var(--r)'},
+          {label:'iFood / Pedido', data:ifoodPorPedido, color:'var(--orange)'},
+          {label:'iFood / Fat', data:pctFat, fmt:v=>v.toFixed(1)+'%', color:'var(--txt2)'},
+          {label:'Ticket Médio', data:d.ticket, inv:true, color:'var(--teal)'},
+        ]
+      ) +
+      insightBox([
+        {icon:'📱', text:'Custo iFood por pedido mostra o impacto real da plataforma na margem de cada venda', cor:'rgba(239,68,68,.12)'},
+        {icon:'🎯', text:'Ticket médio alto + iFood baixo = mix saudável. Ticket baixo + iFood alto = atenção ao canal', cor:'rgba(59,130,246,.12)'},
+        {icon:'💡', text:'Meses com muitos pedidos iFood tendem a pressionar ticket médio — acompanhe a correlação', cor:'rgba(251,146,60,.12)'},
+      ]);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(chartId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: d.meses,
+          datasets: [
+            {label:'Pedidos', data:d.pedidos, backgroundColor:'rgba(59,130,246,.5)', yAxisID:'y2'},
+            {label:'iFood (R$)', data:d.ifood, backgroundColor:'rgba(239,68,68,.7)', yAxisID:'y'},
+            {label:'Ticket Médio', data:d.ticket, type:'line', borderColor:'#14b8a6', backgroundColor:'transparent', tension:.3, borderWidth:2.5, pointRadius:4, yAxisID:'y'},
+          ]
+        },
+        options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}}},scales:{
+          y:{ticks:{color:'var(--txt3)',callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},
+          y2:{position:'right',ticks:{color:'var(--blue)',callback:v=>Math.round(v)+'ped'},grid:{display:false}},
+          x:{ticks:{color:'var(--txt3)'}}
+        }}
+      });
+    }, 50);
+  }
+
+  // ── 3. MOTOBOY × PEDIDOS ──────────────────────────────────
+  else if (tipo === 'motoboy_pedidos') {
+    const motoPorPedido = d.pedidos.map((p,i) => p>0 ? d.moto[i]/p : 0);
+    const pctFat = d.moto.map((v,i) => d.fat[i]>0 ? v/d.fat[i]*100 : 0);
+    const chartId = 'crz_chart_' + tipo;
+    const mediaMotoPed = avg(motoPorPedido.filter(v=>v>0));
+
+    const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${kpi('Custo Motoboy / Pedido', fmtR(mediaMotoPed), 'média do período', 'var(--green)')}
+      ${kpi('% médio do faturamento', avg(pctFat).toFixed(1)+'%', 'referência: 8–15%', avg(pctFat)>15?'var(--r)':'var(--green)')}
+      ${kpi('Total gasto Motoboys', fmtR(d.moto.reduce((s,v)=>s+v,0)), 'acumulado no período', 'var(--orange)')}
+    </div>`;
+
+    painel.innerHTML = kpis +
+      `<canvas id="${chartId}" height="80" style="margin-bottom:12px"></canvas>` +
+      buildTable(
+        d.meses.flatMap((m,i) => i<n-1 ? [m,'→'] : [m]),
+        [
+          {label:'Pedidos', data:d.pedidos, fmt:v=>Math.round(v).toString(), inv:true, color:'var(--blue)'},
+          {label:'Motoboy (R$)', data:d.moto, color:'var(--green)'},
+          {label:'Motoboy / Pedido', data:motoPorPedido, color:'var(--orange)'},
+          {label:'Motoboy / Fat', data:pctFat, fmt:v=>v.toFixed(1)+'%', color:'var(--txt2)'},
+        ]
+      ) +
+      insightBox([
+        {icon:'🛵', text:`Custo médio de ${fmtR(mediaMotoPed)} por pedido — meses com mais pedidos tendem a diluir esse custo`, cor:'rgba(34,197,94,.12)'},
+        {icon:'📈', text:'Se pedidos sobem mas custo/pedido também sobe, pode indicar horas extras ou rotas ineficientes', cor:'rgba(251,146,60,.12)'},
+        {icon:'💡', text:'Compare motoboy/pedido com iFood/pedido para entender qual canal de entrega é mais eficiente', cor:'rgba(59,130,246,.12)'},
+      ]);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(chartId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: d.meses,
+          datasets: [
+            {label:'Pedidos', data:d.pedidos, backgroundColor:'rgba(59,130,246,.4)', yAxisID:'y2'},
+            {label:'Motoboy (R$)', data:d.moto, backgroundColor:'rgba(34,197,94,.8)', yAxisID:'y'},
+            {label:'R$/Pedido', data:motoPorPedido, type:'line', borderColor:'#f97316', backgroundColor:'transparent', tension:.3, borderWidth:2.5, pointRadius:4, yAxisID:'y3'},
+          ]
+        },
+        options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}}},scales:{
+          y:{ticks:{color:'var(--txt3)',callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},
+          y2:{position:'right',ticks:{color:'var(--blue)',callback:v=>Math.round(v)+'ped'},grid:{display:false}},
+          y3:{display:false},
+          x:{ticks:{color:'var(--txt3)'}}
+        }}
+      });
+    }, 50);
+  }
+
+  // ── 4. MKT × FATURAMENTO ──────────────────────────────────
+  else if (tipo === 'mkt_fat') {
+    const roiMkt = d.fat.map((f,i) => d.mkt[i]>0 ? f/d.mkt[i] : 0);
+    const pctFat = d.mkt.map((v,i) => d.fat[i]>0 ? v/d.fat[i]*100 : 0);
+    const chartId = 'crz_chart_' + tipo;
+    const melhorROI = d.meses[roiMkt.indexOf(Math.max(...roiMkt.filter(v=>v>0)))];
+    const mediaROI = avg(roiMkt.filter(v=>v>0));
+
+    const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${kpi('ROI MKT médio', mediaROI.toFixed(1)+'x', 'R$ gerado por R$ investido', mediaROI>=5?'var(--green)':'var(--orange)')}
+      ${kpi('% médio do faturamento', avg(pctFat).toFixed(1)+'%', 'referência: 3–8%', 'var(--txt)')}
+      ${kpi('Melhor ROI', melhorROI, `${Math.max(...roiMkt.filter(v=>v>0)).toFixed(1)}x retorno`, 'var(--purple)')}
+    </div>`;
+
+    // Cálculo de variação do faturamento vs variação do MKT
+    const varFat = d.fat.map((v,i) => i>0&&d.fat[i-1]>0 ? ((v-d.fat[i-1])/d.fat[i-1]*100) : null);
+    const varMkt = d.mkt.map((v,i) => i>0&&d.mkt[i-1]>0 ? ((v-d.mkt[i-1])/d.mkt[i-1]*100) : null);
+
+    const corrRows = d.meses.slice(1).map((m,i) => {
+      const vf = varFat[i+1]; const vm = varMkt[i+1];
+      if (vf===null||vm===null) return '';
+      const sinal = (vm>0&&vf>0)||(vm<0&&vf<0) ? '✅' : '⚠️';
+      return `<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+        <span style="color:var(--txt2)">${m}</span>
+        <span>MKT ${vm>=0?'+':''}${vm.toFixed(1)}% → Fat ${vf>=0?'+':''}${vf.toFixed(1)}% ${sinal}</span>
+      </div>`;
+    }).join('');
+
+    painel.innerHTML = kpis +
+      `<canvas id="${chartId}" height="80" style="margin-bottom:12px"></canvas>` +
+      buildTable(
+        d.meses.flatMap((m,i) => i<n-1 ? [m,'→'] : [m]),
+        [
+          {label:'Faturamento', data:d.fat, inv:true, color:'var(--green)'},
+          {label:'MKT (R$)', data:d.mkt, color:'var(--purple)'},
+          {label:'MKT / Fat', data:pctFat, fmt:v=>v.toFixed(1)+'%', color:'var(--txt2)'},
+          {label:'ROI (fat/mkt)', data:roiMkt, fmt:v=>v.toFixed(1)+'x', inv:true, color:'var(--orange)'},
+        ]
+      ) +
+      (corrRows ? `<div style="margin-top:12px"><div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Correlação mês a mês</div>${corrRows}</div>` : '') +
+      insightBox([
+        {icon:'📣', text:`ROI de ${mediaROI.toFixed(1)}x — para cada R$ 1 em MKT, gerou R$ ${mediaROI.toFixed(1)} em faturamento`, cor:'rgba(168,85,247,.12)'},
+        {icon:'⚠️', text:'Meses onde MKT sobe mas faturamento cai indicam saturação de canal ou problema de conversão', cor:'rgba(239,68,68,.12)'},
+        {icon:'💡', text:'Calcule o ROI por canal (iFood Ads vs tráfego pago) para otimizar investimento', cor:'rgba(59,130,246,.12)'},
+      ]);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(chartId);
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: d.meses,
+          datasets: [
+            {label:'Faturamento', data:d.fat, backgroundColor:'rgba(34,197,94,.4)', yAxisID:'y'},
+            {label:'MKT (R$)', data:d.mkt, backgroundColor:'rgba(168,85,247,.8)', yAxisID:'y'},
+            {label:'ROI (x)', data:roiMkt, type:'line', borderColor:'#f97316', backgroundColor:'transparent', tension:.3, borderWidth:2.5, pointRadius:4, yAxisID:'y2'},
+          ]
+        },
+        options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}}},scales:{
+          y:{ticks:{color:'var(--txt3)',callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},
+          y2:{position:'right',ticks:{color:'var(--orange)',callback:v=>v.toFixed(1)+'x'},grid:{display:false}},
+          x:{ticks:{color:'var(--txt3)'}}
+        }}
+      });
+    }, 50);
+  }
+
+  // ── 5. SALDO × DIVIDENDOS × CAIXA ────────────────────────
+  else if (tipo === 'saldo_caixa') {
+    const chartId = 'crz_chart_' + tipo;
+    // Dividendos e caixa: busca na planilha se disponível, senão usa proxy
+    const dividendos = getRow_DRE('Dividendos') || d.meses.map(()=>0);
+    const caixa = getRow_DRE('Caixa') || getRow_DRE('Caixa Final') || d.meses.map(()=>0);
+    const saldoAcum = d.saldo.map((v,i,arr) => arr.slice(0,i+1).reduce((s,x)=>s+x,0));
+    const temDivid = dividendos.some(v=>v>0);
+    const temCaixa = caixa.some(v=>v>0);
+
+    const kpis = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${kpi('Saldo acumulado', fmtR(saldoAcum[n-1]||0), 'soma dos saldos mensais', (saldoAcum[n-1]||0)>=0?'var(--green)':'var(--r)')}
+      ${kpi('Melhor mês', d.meses[d.saldo.indexOf(Math.max(...d.saldo))], fmtR(Math.max(...d.saldo)), 'var(--green)')}
+      ${kpi('Meses negativos', d.saldo.filter(v=>v<0).length.toString(), 'de '+n+' meses analisados', d.saldo.filter(v=>v<0).length>0?'var(--r)':'var(--green)')}
+    </div>`;
+
+    const saldoRows = `
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Saúde do caixa mês a mês</div>
+        ${d.meses.map((m,i) => {
+          const s = d.saldo[i];
+          const sa = saldoAcum[i];
+          const bar = Math.abs(s) / Math.max(...d.saldo.map(Math.abs), 1) * 100;
+          const cor = s>=0 ? 'var(--green)' : 'var(--r)';
+          return `<div style="display:grid;grid-template-columns:50px 1fr 80px 90px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:700;color:var(--txt3)">${m}</span>
+            <div style="height:6px;background:var(--bg3);border-radius:3px">
+              <div style="width:${bar}%;height:100%;border-radius:3px;background:${cor}"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:${cor};text-align:right">${fmtR(s)}</span>
+            <span style="font-size:10px;color:var(--txt3);text-align:right">Acum: ${fmtR(sa)}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    painel.innerHTML = kpis +
+      `<canvas id="${chartId}" height="80" style="margin-bottom:12px"></canvas>` +
+      saldoRows +
+      (temDivid || temCaixa ? buildTable(
+        d.meses.flatMap((m,i) => i<n-1 ? [m,'→'] : [m]),
+        [
+          {label:'Saldo/Mês', data:d.saldo, bold:true, color:(d.saldo.some(v=>v<0)?'var(--r)':'var(--green)')},
+          ...(temDivid ? [{label:'Dividendos', data:dividendos, color:'var(--purple)'}] : []),
+          ...(temCaixa ? [{label:'Caixa', data:caixa, color:'var(--blue)'}] : []),
+        ]
+      ) : `<div style="font-size:11px;color:var(--txt3);padding:12px;background:var(--bg3);border-radius:8px;margin-top:8px">💡 Adicione linhas "Dividendos" e "Caixa" na aba Centro de Custo para ver o cruzamento completo.</div>`) +
+      insightBox([
+        {icon:'💰', text:'Saldo acumulado positivo indica que a empresa gerou caixa líquido no período', cor:'rgba(34,197,94,.12)'},
+        {icon:'⚠️', text:'Meses de saldo negativo precisam ser cobertos por caixa anterior ou empréstimo — planeje com antecedência', cor:'rgba(239,68,68,.12)'},
+        {icon:'💡', text:'Dividendos acima do saldo mensal comprometem o caixa — distribua apenas o excedente do acumulado', cor:'rgba(168,85,247,.12)'},
+      ]);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(chartId);
+      if (!ctx) return;
+      const datasets = [
+        {label:'Saldo/Mês', data:d.saldo, backgroundColor:d.saldo.map(v=>v>=0?'rgba(34,197,94,.7)':'rgba(239,68,68,.7)'), yAxisID:'y'},
+        {label:'Acumulado', data:saldoAcum, type:'line', borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,.1)', fill:true, tension:.3, borderWidth:2.5, pointRadius:3, yAxisID:'y'},
+      ];
+      if (temDivid) datasets.push({label:'Dividendos', data:dividendos, type:'line', borderColor:'#a855f7', backgroundColor:'transparent', tension:.3, borderWidth:2, pointRadius:3, borderDash:[4,3], yAxisID:'y'});
+      new Chart(ctx, {
+        type: 'bar',
+        data: { labels: d.meses, datasets },
+        options:{responsive:true,plugins:{legend:{position:'top',labels:{color:'var(--txt)',font:{size:10}}}},scales:{
+          y:{ticks:{color:'var(--txt3)',callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}},
+          x:{ticks:{color:'var(--txt3)'}}
+        }}
+      });
+    }, 50);
+  }
+}
+
+// Helper para buscar linhas do DRE nos dados já carregados (cruzamento saldo_caixa)
+function getRow_DRE(label) {
+  if (!window._dreData) return null;
+  // Tenta no cache do DRE — se não existir retorna null
+  return null;
+}
+
+// ================================================================
 // Init com verificação de sessão
 async function iniciarApp() {
   const ok = await load();
