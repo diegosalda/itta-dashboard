@@ -239,6 +239,43 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .sfi-val{font-size:13px;font-weight:800;color:var(--green);flex-shrink:0}
 
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* PAUTA DO DIA */
+.pauta-area-tab{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pauta-tab{font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;transition:all .15s;font-family:inherit}
+.pauta-tab.active{background:var(--r);color:#fff;border-color:var(--r)}
+.pauta-turno-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:18px}
+.pauta-turno-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.turno-ab{background:rgba(34,197,94,.15);color:var(--green)}
+.turno-fe{background:rgba(239,68,68,.15);color:var(--r)}
+.pauta-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);margin-bottom:6px;transition:all .2s;cursor:pointer}
+.pauta-item:hover{border-color:var(--border2)}
+.pauta-item.feito{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25)}
+.pauta-item.pendente-atrasado{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.05)}
+.pauta-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s;margin-top:1px}
+.pauta-item.feito .pauta-check{background:var(--green);border-color:var(--green);color:#fff}
+.pauta-info{flex:1;min-width:0}
+.pauta-nome{font-size:12px;font-weight:600;color:var(--txt);line-height:1.4}
+.pauta-item.feito .pauta-nome{color:var(--txt3);text-decoration:line-through}
+.pauta-meta{font-size:10px;color:var(--txt3);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pauta-quem{font-size:10px;font-weight:600;color:var(--green)}
+.pauta-foto-btn{font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;flex-shrink:0;margin-top:1px}
+.pauta-foto-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;cursor:pointer;border:1px solid var(--border2)}
+.pauta-prog-wrap{background:var(--bg3);border-radius:6px;height:6px;margin-bottom:4px;overflow:hidden}
+.pauta-prog-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),var(--teal));transition:width .4s}
+.pauta-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.pauta-stat{background:var(--bg2);border-radius:10px;padding:12px 14px;border:1px solid var(--border);text-align:center}
+.pauta-stat-val{font-size:22px;font-weight:800}
+.pauta-stat-lbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.pauta-gestor-area{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:10px}
+.pauta-gestor-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pauta-gestor-titulo{font-size:13px;font-weight:700}
+.pauta-gestor-prog{font-size:11px;color:var(--txt3)}
+.pauta-pend-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px}
+.pauta-pend-item:last-child{border:none;padding-bottom:0}
+.pauta-pend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--r)}
+.pauta-hist-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px}
+.pauta-hist-row:last-child{border:none;padding-bottom:0}
 </style>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'></script>
 </head>
@@ -258,6 +295,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" onclick="goPage('cupons',this)"><span class="nav-icon">🎟️</span>Cupons</div>
       <div class="nav-item" onclick="goPage('contas',this)"><span class="nav-icon">💰</span>Contas a Pagar</div>
+      <div class="nav-item" onclick="goPage('pauta',this)"><span class="nav-icon">✅</span>Pauta do Dia</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('dre',this)"><span class="nav-icon">📈</span>DRE</div>
@@ -350,7 +388,7 @@ let cMode='auto',PAGE='analytics',CHARTS={};
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -692,6 +730,7 @@ function aplicar(){
     else if(PAGE==='contas')pgContas();
     else if(PAGE==='tabela')pgTabela(at,an);
     else if(PAGE==='dre'){pgDRE();return;}
+    else if(PAGE==='pauta'){pgPauta();return;}
     else if(PAGE==='usuarios'){pgUsuarios();return;}
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -1502,6 +1541,7 @@ async function fazerLogin() {
           modulos:  {},
           nivel:    (row.c[13]?.v||'USUARIO').toUpperCase(),
           admin:    (row.c[13]?.v||'').toUpperCase() === 'GESTOR',
+          area:     (row.c[14]?.v||'').toString().trim(), // coluna O = área do funcionário
         };
         // Lê permissões de cada módulo
         Object.entries(MODULOS_MAP).forEach(([mod, colIdx]) => {
@@ -1933,7 +1973,9 @@ function abrirFormUsuario(u){
   const checksHtml=MODS.map(m=>`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt);cursor:pointer"><input type="checkbox" id="uMod_${m.k}" ${isEdit&&u[m.k]?'checked':''}> ${m.l}</label>`).join('');
   const fa=document.getElementById('usuarioFormArea');
   if(!fa)return;
-  fa.innerHTML=`<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--txt);margin-bottom:14px">${isEdit?'✏️ Editar usuário':'+ Novo usuário'}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nome</label><input id="uNome" value="${isEdit?(u.nome||'').replace(/"/g,'&quot;'):''}" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Email</label><input id="uEmail" value="${isEdit?u.email:''}" ${isEdit?'readonly':''} style="${iStyle}${isEdit?';opacity:.6':''}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">${isEdit?'Nova senha (deixe em branco para manter)':'Senha'}</label><input id="uSenha" type="password" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nível</label><select id="uNivel" style="${iStyle}"><option value="USUARIO" ${!isEdit||u.nivel!=='GESTOR'?'selected':''}>Usuário</option><option value="GESTOR" ${isEdit&&u.nivel==='GESTOR'?'selected':''}>Gestor Geral</option></select></div></div><div style="margin-bottom:14px"><div style="font-size:11px;color:var(--txt3);margin-bottom:8px;font-weight:600">MÓDULOS COM ACESSO</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${checksHtml}</div></div><div style="display:flex;gap:8px"><button onclick="salvarUsuarioUI(${isEdit?`'${u.email}'`:'null'})" style="padding:8px 20px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;font-size:12px">Salvar</button><button onclick='document.getElementById("usuarioFormArea").innerHTML=""' style="padding:8px 20px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:12px">Cancelar</button></div></div>`;
+  const areasDisponiveis = [...new Set(_pautaTarefas.map(t=>t.area).filter(Boolean))].sort();
+  const areaOptions = ['', ...areasDisponiveis].map(a => `<option value="${a}" ${isEdit&&u.area===a?'selected':''}>${a||'Selecione...'}</option>`).join('');
+  fa.innerHTML=`<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:700;color:var(--txt);margin-bottom:14px">${isEdit?'✏️ Editar usuário':'+ Novo usuário'}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nome</label><input id="uNome" value="${isEdit?(u.nome||'').replace(/"/g,'&quot;'):''}" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Email</label><input id="uEmail" value="${isEdit?u.email:''}" ${isEdit?'readonly':''} style="${iStyle}${isEdit?';opacity:.6':''}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">${isEdit?'Nova senha (deixe em branco para manter)':'Senha'}</label><input id="uSenha" type="password" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nível</label><select id="uNivel" style="${iStyle}"><option value="USUARIO" ${!isEdit||u.nivel!=='GESTOR'?'selected':''}>Usuário</option><option value="GESTOR" ${isEdit&&u.nivel==='GESTOR'?'selected':''}>Gestor Geral</option></select></div><div style="grid-column:1/-1"><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Área (Pauta do Dia)</label><select id="uArea" style="${iStyle}"><option value="">Selecione a área...</option>${areaOptions}</select><div style="font-size:10px;color:var(--txt3);margin-top:3px">Define quais tarefas o funcionário vê na Pauta do Dia</div></div></div><div style="margin-bottom:14px"><div style="font-size:11px;color:var(--txt3);margin-bottom:8px;font-weight:600">MÓDULOS COM ACESSO</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${checksHtml}</div></div><div style="display:flex;gap:8px"><button onclick="salvarUsuarioUI(${isEdit?`'${u.email}'`:'null'})" style="padding:8px 20px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;font-size:12px">Salvar</button><button onclick='document.getElementById("usuarioFormArea").innerHTML=""' style="padding:8px 20px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:12px">Cancelar</button></div></div>`;
 }
 
 function editarUsuario(email){
@@ -1948,10 +1990,11 @@ function salvarUsuarioUI(emailOriginal){
   const email=document.getElementById('uEmail')?.value?.trim().toLowerCase();
   const senha=document.getElementById('uSenha')?.value;
   const nivel=document.getElementById('uNivel')?.value;
+  const area=document.getElementById('uArea')?.value||'';
   if(!nome||!email){alert('Preencha nome e email.');return;}
   const isEdit=!!emailOriginal&&emailOriginal!=='null';
   if(!isEdit&&!senha){alert('Informe uma senha para o novo usuário.');return;}
-  const data={action:isEdit?'atualizarUsuario':'criarUsuario',nome,email,nivel};
+  const data={action:isEdit?'atualizarUsuario':'criarUsuario',nome,email,nivel,area};
   if(senha)data.senha=senha;
   MODS.forEach(m=>{data[m]=document.getElementById('uMod_'+m)?.checked?'SIM':'NAO';});
   fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}})
@@ -2699,6 +2742,482 @@ function getRow_DRE(label) {
   // Tenta no cache do DRE — se não existir retorna null
   return null;
 }
+
+// ================================================================
+// PAUTA DO DIA
+
+const CHECKLIST_SID = '16NXBtteKUq5gq5lF7d-0D_T4w6lA2LHWlxuxO8EMcEA';
+const CHECKLIST_BASE = `https://docs.google.com/spreadsheets/d/${CHECKLIST_SID}/gviz/tq?tqx=out:json&sheet=`;
+
+let _pautaTarefas = [];      // tarefas carregadas da planilha
+let _pautaChecks = [];       // checks do dia (salvo no Apps Script)
+let _pautaHistorico = [];    // histórico dos últimos dias
+let _pautaAreaAtiva = '';    // área sendo visualizada (gestor)
+let _pautaCarregando = false;
+
+// ── Carregar tarefas da aba TAREFAS ─────────────────────────────
+async function carregarTarefasPauta() {
+  if (_pautaTarefas.length > 0) return _pautaTarefas;
+  try {
+    const resp = await fetch(CHECKLIST_BASE + encodeURIComponent('TAREFAS') + '&cachebust=' + Date.now());
+    const txt = await resp.text();
+    const json = JSON.parse(txt.replace(/^[^\(]+\(/, '').replace(/\);?$/, ''));
+    const rows = json.table.rows;
+    _pautaTarefas = rows
+      .filter(r => r.c[0]?.v && typeof r.c[0].v === 'string' && r.c[0].v.trim().length > 5)
+      .map((r, i) => ({
+        id: 'T' + i,
+        tarefa: r.c[0]?.v?.toString().trim() || '',
+        periodo: r.c[1]?.v?.toString().trim() || '',
+        area: r.c[2]?.v?.toString().trim() || '',
+        checklist: r.c[3]?.v?.toString().trim() || '',
+        temFoto: false, // pode ser configurado depois
+      }))
+      .filter(t => t.tarefa && t.area);
+    console.log('Tarefas pauta:', _pautaTarefas.length);
+    return _pautaTarefas;
+  } catch(e) {
+    console.error('Erro ao carregar tarefas:', e);
+    return [];
+  }
+}
+
+// ── Carregar checks do dia do Apps Script ───────────────────────
+async function carregarChecksPauta(dataStr) {
+  try {
+    const url = APPS_URL + '?action=listarChecks&data=' + dataStr + '&cachebust=' + Date.now();
+    const resp = await fetch(url);
+    const json = await resp.json();
+    if (json.checks) _pautaChecks = json.checks;
+    else _pautaChecks = [];
+  } catch(e) {
+    // Se Apps Script ainda não tem a action, usa array vazio
+    _pautaChecks = [];
+  }
+}
+
+// ── Carregar histórico (últimos 7 dias) ─────────────────────────
+async function carregarHistoricoPauta() {
+  try {
+    const url = APPS_URL + '?action=historicoChecks&dias=7&cachebust=' + Date.now();
+    const resp = await fetch(url);
+    const json = await resp.json();
+    if (json.historico) _pautaHistorico = json.historico;
+    else _pautaHistorico = [];
+  } catch(e) {
+    _pautaHistorico = [];
+  }
+}
+
+// ── Salvar check via Apps Script ────────────────────────────────
+async function salvarCheck(tarefaId, tarefa, area, turno, foto64) {
+  const hoje = ds(new Date());
+  const agora = p2(new Date().getHours()) + ':' + p2(new Date().getMinutes());
+  const usuario = USUARIO_ATUAL?.nome || 'Desconhecido';
+  const check = {
+    tarefaId, tarefa, area, turno,
+    usuario, data: hoje, hora: agora,
+    foto: foto64 || '',
+  };
+  // Salva local imediatamente para UX rápida
+  _pautaChecks = _pautaChecks.filter(c => !(c.tarefaId === tarefaId && c.data === hoje));
+  _pautaChecks.push(check);
+
+  // Sincroniza com Apps Script
+  try {
+    fetch(APPS_URL, {
+      method: 'POST', mode: 'no-cors', redirect: 'follow',
+      body: JSON.stringify({ action: 'salvarCheck', ...check }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch(e) {}
+  return check;
+}
+
+// ── Desfazer check ───────────────────────────────────────────────
+async function desfazerCheck(tarefaId) {
+  const hoje = ds(new Date());
+  _pautaChecks = _pautaChecks.filter(c => !(c.tarefaId === tarefaId && c.data === hoje));
+  try {
+    fetch(APPS_URL, {
+      method: 'POST', mode: 'no-cors', redirect: 'follow',
+      body: JSON.stringify({ action: 'desfazerCheck', tarefaId, data: hoje }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch(e) {}
+}
+
+// ── Página principal da Pauta ────────────────────────────────────
+async function pgPauta() {
+  const mc = document.getElementById('mc');
+  if (!mc) return;
+
+  const isGestor = USUARIO_ATUAL?.nivel === 'GESTOR' || USUARIO_ATUAL?.admin;
+  const areaUsuario = USUARIO_ATUAL?.area || '';
+  const hoje = ds(new Date());
+
+  mc.innerHTML = '<div class="loading"><div class="spin"></div>Carregando pauta do dia...</div>';
+
+  // Carrega tarefas e checks em paralelo
+  await Promise.all([carregarTarefasPauta(), carregarChecksPauta(hoje)]);
+
+  if (!_pautaTarefas.length) {
+    mc.innerHTML = '<div class="loading" style="color:var(--txt3)">Nenhuma tarefa encontrada na planilha de Checklists.</div>';
+    return;
+  }
+
+  // Todas as áreas disponíveis
+  const areas = [...new Set(_pautaTarefas.map(t => t.area).filter(Boolean))].sort();
+
+  if (isGestor) {
+    // Gestor vê painel completo com todas as áreas
+    if (!_pautaAreaAtiva) _pautaAreaAtiva = areas[0] || '';
+    renderPautaGestor(mc, areas, hoje);
+  } else {
+    // Funcionário vê só sua área
+    const areaFinal = areaUsuario || areas[0] || '';
+    renderPautaFuncionario(mc, areaFinal, hoje);
+  }
+}
+
+// ── Render: visão do FUNCIONÁRIO ─────────────────────────────────
+function renderPautaFuncionario(mc, area, hoje) {
+  const tarefasArea = _pautaTarefas.filter(t => t.area === area);
+  const abertura = tarefasArea.filter(t => t.checklist === 'Abertura' || t.periodo?.toLowerCase().includes('início'));
+  const fechamento = tarefasArea.filter(t => t.checklist === 'Fechamento' || t.periodo?.toLowerCase().includes('final'));
+  const outras = tarefasArea.filter(t => !abertura.includes(t) && !fechamento.includes(t));
+
+  const checksDia = _pautaChecks.filter(c => c.data === hoje);
+  const feitas = checksDia.length;
+  const total = tarefasArea.length;
+  const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
+  const pendentes = tarefasArea.filter(t => !checksDia.find(c => c.tarefaId === t.id));
+
+  const horaAtual = new Date().getHours();
+  const isFechamento = horaAtual >= 21;
+
+  const progHtml = `
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700">${area}</div>
+          <div style="font-size:10px;color:var(--txt3)">${hoje.split('-').reverse().join('/')} · ${feitas} de ${total} concluídas</div>
+        </div>
+        <div style="font-size:24px;font-weight:800;color:${pct===100?'var(--green)':pct>50?'var(--orange)':'var(--r)'}">${pct}%</div>
+      </div>
+      <div class="pauta-prog-wrap"><div class="pauta-prog-fill" style="width:${pct}%"></div></div>
+      ${pct < 100 ? `<div style="font-size:10px;color:var(--txt3);margin-top:6px">⏳ ${pendentes.length} tarefa${pendentes.length !== 1 ? 's' : ''} pendente${pendentes.length !== 1 ? 's' : ''}</div>` : '<div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:600">✅ Todas as tarefas concluídas!</div>'}
+    </div>`;
+
+  const renderTurno = (lista, turno, badge) => {
+    if (!lista.length) return '';
+    const rows = lista.map(t => renderItemFuncionario(t, hoje)).join('');
+    return `
+      <div class="pauta-turno-hdr">
+        <span class="pauta-turno-badge ${turno === 'Abertura' ? 'turno-ab' : 'turno-fe'}">${badge} ${turno}</span>
+        <span style="font-size:10px;color:var(--txt3)">${lista.filter(t => _pautaChecks.find(c => c.tarefaId === t.id && c.data === hoje)).length}/${lista.length}</span>
+      </div>
+      ${rows}`;
+  };
+
+  mc.innerHTML = progHtml +
+    renderTurno(abertura, 'Abertura', '🌅') +
+    renderTurno(fechamento, 'Fechamento', '🌙') +
+    (outras.length ? renderTurno(outras, 'Durante o dia', '☀️') : '') +
+    `<div style="margin-top:20px;font-size:10px;color:var(--txt3);text-align:center">Toque em uma tarefa para marcar como concluída</div>`;
+}
+
+function renderItemFuncionario(t, hoje) {
+  const check = _pautaChecks.find(c => c.tarefaId === t.id && c.data === hoje);
+  const feito = !!check;
+  return `
+    <div class="pauta-item ${feito ? 'feito' : ''}" onclick="toggleCheck('${t.id}')" id="pitem_${t.id}">
+      <div class="pauta-check">${feito ? '✓' : ''}</div>
+      <div class="pauta-info">
+        <div class="pauta-nome">${t.tarefa}</div>
+        ${feito ? `<div class="pauta-meta"><span class="pauta-quem">✓ ${check.usuario}</span><span style="color:var(--txt3)">${check.hora}</span></div>` : `<div class="pauta-meta"><span style="color:var(--txt3)">${t.periodo || ''}</span></div>`}
+      </div>
+      ${t.temFoto && !feito ? `<button class="pauta-foto-btn" onclick="event.stopPropagation();abrirFotoCheck('${t.id}')">📷</button>` : ''}
+      ${feito && check.foto ? `<img class="pauta-foto-thumb" src="${check.foto}" onclick="event.stopPropagation();verFoto('${check.foto}')" title="Ver foto">` : ''}
+    </div>`;
+}
+
+// ── Render: visão do GESTOR ──────────────────────────────────────
+function renderPautaGestor(mc, areas, hoje) {
+  const checksDia = _pautaChecks.filter(c => c.data === hoje);
+
+  // Cards de resumo por área
+  const resumoCards = areas.map(area => {
+    const tarefasArea = _pautaTarefas.filter(t => t.area === area);
+    const feitas = tarefasArea.filter(t => checksDia.find(c => c.tarefaId === t.id)).length;
+    const total = tarefasArea.length;
+    const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
+    const cor = pct === 100 ? 'var(--green)' : pct > 60 ? 'var(--orange)' : 'var(--r)';
+    return `
+      <div class="pauta-stat" style="cursor:pointer;border-color:${_pautaAreaAtiva===area?cor:'var(--border)'};background:${_pautaAreaAtiva===area?'var(--bg3)':'var(--bg2)'}" onclick="selecionarAreaGestor('${area}')">
+        <div class="pauta-stat-val" style="color:${cor}">${pct}%</div>
+        <div style="font-size:11px;font-weight:600;color:var(--txt);margin-top:2px">${area}</div>
+        <div class="pauta-stat-lbl">${feitas}/${total} feitas</div>
+      </div>`;
+  }).join('');
+
+  // Pendentes globais (destaque)
+  const pendentesTodas = _pautaTarefas.filter(t => !checksDia.find(c => c.tarefaId === t.id));
+  const pendsHtml = pendentesTodas.length === 0
+    ? '<div style="color:var(--green);font-size:12px;font-weight:600;padding:12px 0">✅ Todas as tarefas do dia foram concluídas!</div>'
+    : pendentesTodas.slice(0, 10).map(t => `
+        <div class="pauta-pend-item">
+          <div class="pauta-pend-dot"></div>
+          <div style="flex:1"><span style="font-weight:600;color:var(--txt)">${t.tarefa}</span></div>
+          <span style="color:var(--txt3);font-size:10px;white-space:nowrap">${t.area} · ${t.checklist||t.periodo||''}</span>
+        </div>`).join('') + (pendentesTodas.length > 10 ? `<div style="font-size:10px;color:var(--txt3);padding:6px 0">+${pendentesTodas.length - 10} tarefas pendentes...</div>` : '');
+
+  // Área selecionada em detalhe
+  const areaDetalhe = _pautaAreaAtiva ? renderDetalheAreaGestor(_pautaAreaAtiva, hoje) : '';
+
+  // Checks recentes (últimos 10)
+  const recentes = [...checksDia].sort((a, b) => b.hora.localeCompare(a.hora)).slice(0, 8);
+  const recentesHtml = recentes.length
+    ? recentes.map(c => `
+        <div class="pauta-hist-row">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px"></div>
+          <div style="flex:1"><span style="font-weight:600;color:var(--txt)">${c.tarefa}</span><div style="color:var(--txt3)">${c.area}</div></div>
+          <div style="text-align:right;flex-shrink:0"><div style="color:var(--green);font-weight:600">${c.usuario}</div><div style="color:var(--txt3)">${c.hora}</div></div>
+        </div>`).join('')
+    : '<div style="color:var(--txt3);font-size:12px;padding:12px 0;text-align:center">Nenhuma tarefa concluída ainda hoje.</div>';
+
+  mc.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700">Pauta do Dia — ${hoje.split('-').reverse().join('/')}</div>
+        <div style="font-size:10px;color:var(--txt3)">${checksDia.length} de ${_pautaTarefas.length} tarefas concluídas hoje</div>
+      </div>
+      <button onclick="recarregarPauta()" style="font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt3);cursor:pointer;font-family:inherit">↻ Atualizar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:16px">
+      ${resumoCards}
+    </div>
+
+    <div class="g2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-hdr"><div><div class="card-ttl">🔴 Pendentes hoje</div><div class="card-sub">${pendentesTodas.length} tarefa${pendentesTodas.length!==1?'s':''} ainda não concluídas</div></div></div>
+        ${pendsHtml}
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-ttl">✅ Concluídas recentemente</div></div>
+        ${recentesHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr" style="margin-bottom:12px">
+        <div><div class="card-ttl">📋 Detalhe por área</div><div class="card-sub">Selecione uma área acima para ver as tarefas</div></div>
+      </div>
+      <div class="pauta-area-tab">
+        ${areas.map(a => `<button class="pauta-tab ${_pautaAreaAtiva===a?'active':''}" onclick="selecionarAreaGestor('${a}')">${a}</button>`).join('')}
+      </div>
+      <div id="pautaDetalheArea">${areaDetalhe}</div>
+    </div>`;
+}
+
+function renderDetalheAreaGestor(area, hoje) {
+  const tarefasArea = _pautaTarefas.filter(t => t.area === area);
+  const checksDia = _pautaChecks.filter(c => c.data === hoje);
+  const abertura = tarefasArea.filter(t => t.checklist === 'Abertura' || t.periodo?.toLowerCase().includes('início'));
+  const fechamento = tarefasArea.filter(t => t.checklist === 'Fechamento' || t.periodo?.toLowerCase().includes('final'));
+  const outras = tarefasArea.filter(t => !abertura.includes(t) && !fechamento.includes(t));
+
+  const renderGrupo = (lista, turno, badge) => {
+    if (!lista.length) return '';
+    const rows = lista.map(t => {
+      const check = checksDia.find(c => c.tarefaId === t.id);
+      const feito = !!check;
+      return `
+        <div class="pauta-item ${feito ? 'feito' : 'pendente-atrasado'}" style="cursor:default">
+          <div class="pauta-check" style="cursor:default">${feito ? '✓' : '!'}</div>
+          <div class="pauta-info">
+            <div class="pauta-nome">${t.tarefa}</div>
+            ${feito
+              ? `<div class="pauta-meta"><span class="pauta-quem">✓ ${check.usuario}</span><span style="color:var(--txt3)">${check.hora}</span></div>`
+              : `<div class="pauta-meta"><span style="color:var(--r);font-weight:600">Pendente</span><span style="color:var(--txt3)">${t.periodo||''}</span></div>`}
+          </div>
+          ${feito && check.foto ? `<img class="pauta-foto-thumb" src="${check.foto}" onclick="verFoto('${check.foto}')" title="Ver foto">` : ''}
+        </div>`;
+    }).join('');
+    return `<div class="pauta-turno-hdr"><span class="pauta-turno-badge ${turno==='Abertura'?'turno-ab':'turno-fe'}">${badge} ${turno}</span><span style="font-size:10px;color:var(--txt3)">${lista.filter(t=>checksDia.find(c=>c.tarefaId===t.id)).length}/${lista.length}</span></div>${rows}`;
+  };
+
+  return renderGrupo(abertura, 'Abertura', '🌅') +
+    renderGrupo(fechamento, 'Fechamento', '🌙') +
+    (outras.length ? renderGrupo(outras, 'Durante o dia', '☀️') : '');
+}
+
+function selecionarAreaGestor(area) {
+  _pautaAreaAtiva = area;
+  const hoje = ds(new Date());
+  // Atualiza tabs
+  document.querySelectorAll('.pauta-tab').forEach(b => {
+    b.classList.toggle('active', b.textContent === area);
+  });
+  // Atualiza cards de resumo
+  document.querySelectorAll('.pauta-stat').forEach(el => {
+    const isAtivo = el.querySelector('.pauta-stat-val')?.nextElementSibling?.textContent === area;
+  });
+  const el = document.getElementById('pautaDetalheArea');
+  if (el) el.innerHTML = renderDetalheAreaGestor(area, hoje);
+  // Re-renderiza cards de seleção
+  pgPauta();
+}
+
+// ── Toggle check (funcionário) ───────────────────────────────────
+async function toggleCheck(tarefaId) {
+  const hoje = ds(new Date());
+  const check = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
+  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
+  if (!tarefa) return;
+
+  // Verifica se há foto obrigatória
+  if (!check && tarefa.temFoto) {
+    abrirFotoCheck(tarefaId);
+    return;
+  }
+
+  if (check) {
+    // Desfaz
+    await desfazerCheck(tarefaId);
+  } else {
+    // Faz check
+    await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, '');
+  }
+
+  // Atualiza item na tela sem re-renderizar tudo
+  const el = document.getElementById('pitem_' + tarefaId);
+  if (el) {
+    const novoCheck = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
+    const feito = !!novoCheck;
+    el.className = `pauta-item ${feito ? 'feito' : ''}`;
+    el.querySelector('.pauta-check').textContent = feito ? '✓' : '';
+    const info = el.querySelector('.pauta-info');
+    if (info) {
+      info.querySelector('.pauta-nome').textContent = tarefa.tarefa;
+      const meta = info.querySelector('.pauta-meta');
+      if (meta) meta.innerHTML = feito
+        ? `<span class="pauta-quem">✓ ${novoCheck.usuario}</span><span style="color:var(--txt3)">${novoCheck.hora}</span>`
+        : `<span style="color:var(--txt3)">${tarefa.periodo || ''}</span>`;
+    }
+    // Atualiza barra de progresso
+    atualizarProgresso();
+  }
+}
+
+function atualizarProgresso() {
+  const hoje = ds(new Date());
+  const isGestor = USUARIO_ATUAL?.nivel === 'GESTOR' || USUARIO_ATUAL?.admin;
+  const area = USUARIO_ATUAL?.area || '';
+  const tarefasArea = isGestor ? _pautaTarefas : _pautaTarefas.filter(t => t.area === area);
+  const feitas = _pautaChecks.filter(c => c.data === hoje && tarefasArea.find(t => t.id === c.tarefaId)).length;
+  const total = tarefasArea.length;
+  const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
+  const fill = document.querySelector('.pauta-prog-fill');
+  if (fill) fill.style.width = pct + '%';
+  const pctEl = document.querySelector('.pauta-stat-val, [data-pct-label]');
+}
+
+// ── Foto no check ────────────────────────────────────────────────
+function abrirFotoCheck(tarefaId) {
+  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
+  if (!tarefa) return;
+  const overlay = document.getElementById('contaDetailModal') || criarOverlay();
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:420px;width:90%;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:700">📷 Foto de checagem</div>
+        <button onclick="document.getElementById('contaDetailModal').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">${tarefa.tarefa}</div>
+      <input type="file" id="fotoInput_${tarefaId}" accept="image/*" capture="environment" onchange="processarFotoCheck('${tarefaId}', this)" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="document.getElementById('fotoInput_${tarefaId}').click()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">📷 Tirar foto</button>
+        <button onclick="confirmarCheckSemFoto('${tarefaId}')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:13px">Sem foto</button>
+      </div>
+      <div id="fotoPreview_${tarefaId}" style="margin-top:12px"></div>
+    </div>`;
+}
+
+function criarOverlay() {
+  const ov = document.createElement('div');
+  ov.id = 'contaDetailModal';
+  ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center';
+  ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function processarFotoCheck(tarefaId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const base64 = e.target.result;
+    const preview = document.getElementById('fotoPreview_' + tarefaId);
+    if (preview) preview.innerHTML = `<img src="${base64}" style="width:100%;border-radius:8px;margin-bottom:10px"><button onclick="confirmarCheckComFoto('${tarefaId}','${base64.substring(0, 20)}...')" data-foto="${base64}" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">✓ Confirmar check com foto</button>`;
+    // Guarda base64 no botão
+    const btn = preview?.querySelector('button');
+    if (btn) btn.onclick = () => confirmarCheckComFoto(tarefaId, base64);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function confirmarCheckComFoto(tarefaId, foto64) {
+  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
+  if (!tarefa) return;
+  // Comprime foto (máx 400px, qualidade 0.6)
+  let fotoFinal = foto64;
+  try {
+    const img = new Image();
+    img.src = foto64;
+    await new Promise(r => img.onload = r);
+    const canvas = document.createElement('canvas');
+    const max = 400;
+    const ratio = Math.min(max / img.width, max / img.height, 1);
+    canvas.width = img.width * ratio;
+    canvas.height = img.height * ratio;
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    fotoFinal = canvas.toDataURL('image/jpeg', 0.6);
+  } catch(e) {}
+  const modal = document.getElementById('contaDetailModal');
+  if (modal) modal.style.display = 'none';
+  await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, fotoFinal);
+  await pgPauta();
+}
+
+async function confirmarCheckSemFoto(tarefaId) {
+  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
+  if (!tarefa) return;
+  const modal = document.getElementById('contaDetailModal');
+  if (modal) modal.style.display = 'none';
+  await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, '');
+  await pgPauta();
+}
+
+function verFoto(src) {
+  const ov = document.getElementById('contaDetailModal') || criarOverlay();
+  ov.style.display = 'flex';
+  ov.innerHTML = `<div style="max-width:90vw;max-height:90vh;position:relative"><img src="${src}" style="max-width:100%;max-height:85vh;border-radius:10px;display:block"><button onclick="document.getElementById('contaDetailModal').style.display='none'" style="position:absolute;top:-12px;right:-12px;width:28px;height:28px;border-radius:50%;border:none;background:var(--r);color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button></div>`;
+}
+
+async function recarregarPauta() {
+  _pautaChecks = [];
+  _pautaTarefas = [];
+  await pgPauta();
+}
+
+// ── Registro de área no usuário (complemento ao login) ───────────
+// A área é lida da coluna 14 da aba Usuarios (após nivel)
+// Adaptação no fazerLogin() para capturar área:
+const _origFazerLogin = window.fazerLogin;
 
 // ================================================================
 // Init com verificação de sessão
