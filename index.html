@@ -3034,8 +3034,8 @@ function renderDetalheAreaGestor(area, hoje) {
       const check = checksDia.find(c => c.tarefaId === t.id);
       const feito = !!check;
       return `
-        <div class="pauta-item ${feito ? 'feito' : 'pendente-atrasado'}" style="cursor:default">
-          <div class="pauta-check" style="cursor:default">${feito ? '✓' : '!'}</div>
+        <div class="pauta-item ${feito ? 'feito' : 'pendente-atrasado'}" onclick="toggleCheckGestor('${t.id}')" id="pitem_${t.id}" style="cursor:pointer">
+          <div class="pauta-check">${feito ? '✓' : '!'}</div>
           <div class="pauta-info">
             <div class="pauta-nome">${t.tarefa}</div>
             ${feito
@@ -3212,6 +3212,26 @@ async function recarregarPauta() {
   _pautaChecks = [];
   _pautaTarefas = [];
   await pgPauta();
+}
+
+async function toggleCheckGestor(tarefaId) {
+  const hoje = ds(new Date());
+  const check = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
+  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
+  if (!tarefa) return;
+  if (check) { await desfazerCheck(tarefaId); } else { await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, ''); }
+  const el = document.getElementById('pitem_' + tarefaId);
+  if (el) {
+    const novoCheck = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
+    const feito = !!novoCheck;
+    el.className = 'pauta-item ' + (feito ? 'feito' : 'pendente-atrasado');
+    el.querySelector('.pauta-check').textContent = feito ? '✓' : '';
+    const meta = el.querySelector('.pauta-meta');
+    if (meta) meta.innerHTML = feito ? '<span class="pauta-quem">✓ ' + novoCheck.usuario + '</span><span style="color:var(--txt3)">' + novoCheck.hora + '</span>' : '<span style="color:var(--r);font-weight:600">Pendente</span>';
+  }
+  const areas = [...new Set(_pautaTarefas.map(t => t.area).filter(Boolean))].sort();
+  const mc = document.getElementById('mc');
+  if (mc) renderPautaGestor(mc, areas, hoje);
 }
 
 // ── Registro de área no usuário (complemento ao login) ───────────
