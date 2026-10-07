@@ -294,9 +294,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('bairros',this)"><span class="nav-icon">📍</span>Bairros</div>
       <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" onclick="goPage('cupons',this)"><span class="nav-icon">🎟️</span>Cupons</div>
+      <div class="nav-item" onclick="goPage('adicionais',this)"><span class="nav-icon">📦</span>Adicionais</div>
       <div class="nav-item" onclick="goPage('contas',this)"><span class="nav-icon">💰</span>Contas a Pagar</div>
       <div class="nav-item" onclick="goPage('pauta',this)"><span class="nav-icon">✅</span>Pauta do Dia</div>
       <div class="nav-item" onclick="goPage('metaads',this)"><span class="nav-icon">📣</span>Meta Ads</div>
+      <div class="nav-item" onclick="goPage('semanas',this)"><span class="nav-icon">📅</span>Semanas</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('dre',this)"><span class="nav-icon">📈</span>DRE</div>
@@ -383,13 +385,13 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],CONTAS=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],CONTAS=[],ITENS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia',metaads:'Meta Ads'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',adicionais:'Adicionais',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia',metaads:'Meta Ads',semanas:'Semanas do Mês'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -638,6 +640,24 @@ async function load(){
       console.log('Cupons_Raw:',CUPONS.length,'registros');
     }catch(e){console.log('Cupons err:',e);}
 
+    // Itens_Raw (Adicionais: Bebida/Roll/Finger/Sweet Roll)
+    try{
+      const urlIt=BASE+encodeURIComponent('Itens_Raw');
+      const respIt=await fetch(urlIt);
+      const txtIt=await respIt.text();
+      const jsonIt=JSON.parse(txtIt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+      const normCat=c=>{const s=String(c||'').trim().toUpperCase();if(s.includes('SWEET'))return'Sweet Roll';if(s.includes('BEBIDA'))return'Bebida';if(s.includes('FINGER'))return'Finger';if(s.includes('ROLL'))return'Roll';return String(c||'').trim()||'Outro';};
+      ITENS=jsonIt.table.rows.slice(1).map(r=>{
+        let dt='';
+        const dv=r.c[0]?.v||'';
+        if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
+        else if(typeof dv==='string')dt=dv.substring(0,10);
+        const cat=r.c[3]?.v||'';
+        return{data:dt,idPedido:String(r.c[1]?.v||''),item:r.c[2]?.v||'',categoria:cat,categoriaNorm:normCat(cat),quantidade:parseFloat(r.c[4]?.v||0),valorUnit:parseFloat(r.c[5]?.v||0),total:parseFloat(r.c[6]?.v||0)};
+      }).filter(d=>d.data&&d.item);
+      console.log('Itens_Raw:',ITENS.length,'registros');
+    }catch(e){console.log('Itens_Raw err:',e);}
+
     // ContasPagar
     try{
       const urlCP=BASE+encodeURIComponent('ContasPagar')+'&cachebust='+Date.now();
@@ -728,11 +748,13 @@ function aplicar(){
     else if(PAGE==='bairros')pgBairros();
     else if(PAGE==='clientes')pgClientes();
     else if(PAGE==='cupons')pgCupons();
+    else if(PAGE==='adicionais')pgAdicionais();
     else if(PAGE==='contas')pgContas();
     else if(PAGE==='tabela')pgTabela(at,an);
     else if(PAGE==='dre'){pgDRE();return;}
     else if(PAGE==='pauta'){pgPauta();return;}
     else if(PAGE==='metaads'){pgMetaAds();return;}
+    else if(PAGE==='semanas'){pgSemanas();return;}
     else if(PAGE==='usuarios'){pgUsuarios();return;}
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -1468,6 +1490,67 @@ function pgCupons(){
     <div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Ranking de cupons no período</div><div class="card-sub">${ranking.length} cupons · ${totalUsos} usos entre ${is.substring(5).replace('-','/')} e ${fs.substring(5).replace('-','/')}</div></div><input type="text" placeholder="Buscar cupom..." oninput="cupomSearch=this.value.toLowerCase();renderCupomRanking()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt);font-family:inherit;outline:none;width:160px"></div><div id="cupomRankingBody"></div></div>
     <div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 10 histórico (todos os tempos)</div><div class="card-sub">${historico.length} cupons distintos · histórico completo</div></div></div><div class="tw"><table>${thead}<tbody>${rankRows(historico.slice(0,10),maxH)}</tbody></table></div></div>`;
   renderCupomRanking();
+}
+
+function pgAdicionais(){
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  if(!ITENS.length){mc.innerHTML='<div class="loading">Dados de adicionais não disponíveis.</div>';return;}
+
+  const{i,f}=calcP();
+  const is=ds(i),fs=ds(f);
+  const dados=ITENS.filter(d=>d.data>=is&&d.data<=fs);
+
+  const totais={Bebida:0,Roll:0,'Sweet Roll':0,Finger:0};
+  let totalGeral=0,fatGeral=0;
+  const meses={};
+  dados.forEach(d=>{
+    const c=d.categoriaNorm;
+    if(totais[c]!==undefined)totais[c]+=d.quantidade;
+    totalGeral+=d.quantidade;
+    fatGeral+=d.total;
+    const mk=d.data.substring(0,7);
+    if(!meses[mk])meses[mk]={Bebida:0,Roll:0,'Sweet Roll':0,Finger:0,total:0,fat:0};
+    if(meses[mk][c]!==undefined)meses[mk][c]+=d.quantidade;
+    meses[mk].total+=d.quantidade;
+    meses[mk].fat+=d.total;
+  });
+
+  const mesesKeys=Object.keys(meses).sort();
+  const MESES_ABR=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function mesLbl(mk){const[a,m]=mk.split('-');return MESES_ABR[parseInt(m)-1]+'/'+a.substring(2);}
+  const labels=mesesKeys.map(mesLbl);
+
+  mc.innerHTML=`
+    <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+      <div class="mc blue"><div class="mc-icon">🥤</div><div class="mc-lbl">Bebidas</div><div class="mc-val">${fmt(totais.Bebida)}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
+      <div class="mc purple"><div class="mc-icon">🍣</div><div class="mc-lbl">Rolls</div><div class="mc-val">${fmt(totais.Roll)}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
+      <div class="mc orange"><div class="mc-icon">🍗</div><div class="mc-lbl">Fingers</div><div class="mc-val">${fmt(totais.Finger)}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
+      <div class="mc green"><div class="mc-icon">🍩</div><div class="mc-lbl">Sweet Rolls</div><div class="mc-val">${fmt(totais['Sweet Roll'])}</div><div class="mc-comp"><span class="mc-ct">no período selecionado</span></div></div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hdr"><div><div class="card-ttl">Evolução mensal por categoria</div><div class="card-sub">Quantidade vendida · ${mesesKeys.length} mês${mesesKeys.length!==1?'es':''} no período</div></div></div>
+      <div style="position:relative;width:100%;height:280px"><canvas id="cAdic" role="img" aria-label="Evolução mensal de adicionais"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div><div class="card-ttl">Resumo mensal</div><div class="card-sub">${fmt(totalGeral)} itens · ${fmtR(fatGeral)} em faturamento de adicionais no período</div></div></div>
+      <div class="tw"><table>
+        <thead><tr><th>Mês</th><th style="text-align:center">Bebidas</th><th style="text-align:center">Roll</th><th style="text-align:center">Sweet Roll</th><th style="text-align:center">Finger</th><th style="text-align:center">Total Adicionais</th><th style="text-align:right">Faturamento Adicionais</th></tr></thead>
+        <tbody>${mesesKeys.slice().reverse().map(mk=>{const v=meses[mk];return`<tr><td style="font-weight:600">${mesLbl(mk)}</td><td style="text-align:center">${fmt(v.Bebida)}</td><td style="text-align:center">${fmt(v.Roll)}</td><td style="text-align:center">${fmt(v['Sweet Roll'])}</td><td style="text-align:center">${fmt(v.Finger)}</td><td style="text-align:center;font-weight:700">${fmt(v.total)}</td><td style="text-align:right;color:var(--green)">${fmtR(v.fat)}</td></tr>`;}).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  dC('cAdic');
+  CHARTS['cAdic']=new Chart(document.getElementById('cAdic').getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Bebida',data:mesesKeys.map(mk=>meses[mk].Bebida),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#3b82f6'},
+      {label:'Roll',data:mesesKeys.map(mk=>meses[mk].Roll),borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#a855f7'},
+      {label:'Finger',data:mesesKeys.map(mk=>meses[mk].Finger),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#f97316'},
+      {label:'Sweet Roll',data:mesesKeys.map(mk=>meses[mk]['Sweet Roll']),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#22c55e'}
+    ]},
+    options:{...CO}
+  });
 }
 
 function pgTabela(at,an){
@@ -3469,6 +3552,107 @@ async function pgMetaAds(preset){
     console.error('pgMetaAds erro:',e);
     document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro ao carregar Meta Ads: '+e.message+'</div>';
   }
+}
+
+function pgSemanas(){
+  const mc=document.getElementById('mc');
+  if(!VHIST.length){mc.innerHTML='<div class="loading"><div class="spin"></div>Aguardando dados...</div>';return;}
+
+  // Agrupa faturamento por dia (excluindo cancelados)
+  const porDia={};
+  VHIST.forEach(v=>{
+    if(!v.data||v.cancelado)return;
+    porDia[v.data]=(porDia[v.data]||0)+(v.valor||0);
+  });
+
+  const MESES_PT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const hoje=new Date();
+  const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
+  function fmtD(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+  function dKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+  // 13 meses: atual + 12 anteriores, do mais recente para o mais antigo
+  const meses=[];
+  for(let i=0;i<=12;i++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);
+    meses.push({ano:d.getFullYear(),mes:d.getMonth()+1});
+  }
+
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;padding-bottom:24px">';
+
+  meses.forEach(({ano,mes})=>{
+    const primeiro=new Date(ano,mes-1,1);
+    const ultimo=new Date(ano,mes,0);
+    const semanas=[];
+    let cursor=new Date(primeiro);
+    let semNum=1;
+
+    while(cursor<=ultimo){
+      const dow=cursor.getDay(); // 0=Dom..6=Sab
+      const daysToMon=dow===0?-6:1-dow;
+      const seg=new Date(cursor);
+      seg.setDate(cursor.getDate()+daysToMon);
+      const dom=new Date(seg);
+      dom.setDate(seg.getDate()+6);
+
+      const ini=seg<primeiro?new Date(primeiro):new Date(seg);
+      const fim=dom>ultimo?new Date(ultimo):new Date(dom);
+
+      let fat=0;
+      const d=new Date(ini);
+      while(d<=fim){fat+=porDia[dKey(d)]||0;d.setDate(d.getDate()+1);}
+
+      const incompleta=seg<primeiro||dom>ultimo;
+      const futura=ini>hj;
+
+      if(!futura||fat>0)semanas.push({num:semNum,seg:ini,dom:fim,fat,incompleta,futura});
+      semNum++;
+      cursor=new Date(dom);
+      cursor.setDate(dom.getDate()+1);
+    }
+
+    const semsComDados=semanas.filter(s=>s.fat>0||!s.futura);
+    if(!semsComDados.length)return;
+
+    const maxFat=Math.max(...semanas.map(s=>s.fat));
+    const idxPeak=maxFat>0?semanas.reduce((mi,s,i,a)=>s.fat>a[mi].fat?i:mi,0):-1;
+    const totalMes=semanas.reduce((acc,s)=>acc+s.fat,0);
+    if(totalMes===0)return;
+
+    const rowsHtml=semanas.map((s,i)=>{
+      const isPeak=i===idxPeak&&s.fat>0;
+      const pct=maxFat>0?(s.fat/maxFat*100):0;
+      const barColor=isPeak?'var(--r)':'var(--blue)';
+      return `<div style="padding:9px 11px;border-radius:9px;border:1px solid ${isPeak?'rgba(224,53,53,.35)':'var(--border)'};background:${isPeak?'rgba(224,53,53,.07)':'var(--bg3)'};margin-bottom:6px${s.futura?';opacity:.4':''}">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="font-size:9px;font-weight:700;color:var(--txt3);background:var(--bg4);padding:2px 7px;border-radius:10px">S${s.num}</span>
+      <span style="font-size:11px;color:var(--txt2)">${fmtD(s.seg)} → ${fmtD(s.dom)}</span>
+      ${s.incompleta?'<span style="font-size:9px;font-weight:600;color:var(--orange);background:rgba(249,115,22,.12);padding:1px 6px;border-radius:8px">parcial</span>':''}
+      ${isPeak?'<span style="font-size:9px;font-weight:700;color:var(--r);background:rgba(224,53,53,.13);padding:1px 6px;border-radius:8px">&#9733; melhor</span>':''}
+    </div>
+    <span style="font-size:12px;font-weight:700;color:${isPeak?'var(--r)':'var(--txt)'};white-space:nowrap;margin-left:8px">${fmtR(s.fat)}</span>
+  </div>
+  <div style="background:var(--bg4);border-radius:4px;height:5px;overflow:hidden">
+    <div style="height:100%;width:${pct.toFixed(1)}%;background:${barColor};border-radius:4px"></div>
+  </div>
+</div>`;
+    }).join('');
+
+    html+=`<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:var(--txt)">${MESES_PT[mes-1]} ${ano}</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:2px">${fmtR(totalMes)} · ${semanas.length} semana${semanas.length!==1?'s':''}</div>
+    </div>
+    ${idxPeak>=0?`<div style="font-size:10px;color:var(--txt3);text-align:right">Melhor semana<br><span style="font-size:12px;font-weight:700;color:var(--r)">${fmtR(maxFat)}</span></div>`:''}
+  </div>
+  ${rowsHtml}
+</div>`;
+  });
+
+  html+='</div>';
+  mc.innerHTML=html;
 }
 
 const _origFazerLogin = window.fazerLogin;
