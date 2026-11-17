@@ -61,6 +61,15 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .menu-btn{display:none;background:none;border:none;color:var(--txt2);font-size:20px;cursor:pointer;padding:4px}
 .page-ttl{font-size:15px;font-weight:700}
 .period-lbl{font-size:11px;color:var(--txt3);margin-left:6px}
+.un-badge{font-size:10px;font-weight:700;color:var(--r);background:rgba(224,53,53,.12);border:1px solid rgba(224,53,53,.3);border-radius:20px;padding:2px 8px;margin-left:8px;white-space:nowrap}
+.un-badge:empty{display:none}
+.un-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.flt .un-chk{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--txt2);text-transform:none;letter-spacing:0;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 8px;cursor:pointer}
+.un-chk input{accent-color:var(--r);margin:0;cursor:pointer}
+.un-aviso{background:rgba(234,179,8,.14);border:1px solid rgba(234,179,8,.45);color:var(--yellow);border-radius:10px;padding:9px 14px;font-size:12px;font-weight:600;margin-bottom:14px}
+.metrics.m6{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.metrics.m6{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.metrics.m6{grid-template-columns:1fr}}
 .btn-apply{background:var(--r);color:#fff;border:none;padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:opacity .15s}
 .btn-apply:hover{opacity:.85}
 .btn-theme{background:var(--bg3);border:1px solid var(--border);color:var(--txt2);width:32px;height:32px;border-radius:var(--radius-sm);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
@@ -314,7 +323,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="topbar">
       <div class="topbar-l">
         <button class="menu-btn" onclick="toggleSb()">☰</button>
-        <div><span class="page-ttl" id="pttl">Visão geral</span><span class="period-lbl" id="plbl"></span></div>
+        <div><span class="page-ttl" id="pttl">Visão geral</span><span class="un-badge" id="ulbl"></span><span class="period-lbl" id="plbl"></span></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Alternar tema">🌙</button>
@@ -323,6 +332,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
 
     <div class="flt-bar">
+      <div class="flt"><label>Unidades</label>
+        <div class="un-row" id="unRow">
+          <label class="un-chk"><input type="checkbox" value="Pituba" onchange="toggleUnidade(this)">Pituba</label>
+          <label class="un-chk"><input type="checkbox" value="Alphaville" onchange="toggleUnidade(this)">Alphaville</label>
+          <label class="un-chk"><input type="checkbox" value="Vilas" onchange="toggleUnidade(this)">Vilas</label>
+          <button class="btn-trocar" onclick="selTodasUnidades()">Todas</button>
+        </div>
+      </div>
       <div class="flt"><label>Período</label>
         <select id="fP" onchange="chgP()">
           <option value="ontem">Ontem</option>
@@ -379,6 +396,10 @@ const DRE_SID='1AWUZfW6VQzD3yZ3c76F6lkU8TzTBgwCeocQLMORFGyY';
 const DRE_URL='https://docs.google.com/spreadsheets/d/'+DRE_SID+'/gviz/tq?tqx=out:json&sheet=Centro%20de%20Custo';
 const CONTAS_URL='https://script.google.com/macros/s/AKfycbygqQR94_rfB9dpDGnMWjL_9V3vs6a5By-rOAM86saAC1u59BPA1RrZ1-tvQAjkn3wctg/exec';
 const APPS_URL=CONTAS_URL.split('?')[0];
+// Unidades — seleção padrão (mude aqui para alterar o padrão)
+const DEFAULT_UNIDADES=['Pituba'];
+const UNIDADES_TODAS=['Pituba','Alphaville','Vilas'];
+const UNIDADES_KEY='itta_unidades';
 // Para limitar período padrão de carregamento (últimos 6 meses = ~180 dias)
 // A planilha completa é carregada, filtros são aplicados no cliente
 const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Calabresa Bombay","Calabresitta","Portuguesa","Marguerita","Quatro Queijos","Lombinho Agridoce","Pepperoni","Calabresa com Catupiry","Bela Parma","Calabronx","Gratinata","Jalapepper (muito apimentada)","La Caprina","Baconzola","Brie com Geleia de Pimenta","Bacon à Moda Itta","Nordestina","Atum","Baiana","Brie com Parma","Caipira Cremoso","Calabresa 4 queijos","Calabresa Especial","Camarão com Catupiry","Di Parma","Camarão com Pesto","Camarão Oriental","Imperial","Frango ao Pesto","Corn & Bacon","Marguerita Especial","Mussarela","Lombinho com Catupiry","Pepperoni com Catupiry","Pepperoni Supremo","Chocolate Meio a Meio"];
@@ -387,6 +408,50 @@ function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()=
 
 let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],CONTAS=[],ITENS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
+let VHIST_ALL=[],VHIST_PITUBA=[],UNIDADES_ERRO=[];
+let UNIDADES_SEL=lerUnidadesSalvas();
+
+// Unidades
+function lerUnidadesSalvas(){
+  try{
+    const s=JSON.parse(localStorage.getItem(UNIDADES_KEY)||'null');
+    if(Array.isArray(s)){const v=s.filter(u=>UNIDADES_TODAS.includes(u));if(v.length)return v;}
+  }catch(e){}
+  return DEFAULT_UNIDADES.slice();
+}
+function salvarUnidades(){try{localStorage.setItem(UNIDADES_KEY,JSON.stringify(UNIDADES_SEL));}catch(e){}}
+function soPituba(){return UNIDADES_SEL.length===1&&UNIDADES_SEL[0]==='Pituba';}
+function incluiPituba(){return UNIDADES_SEL.includes('Pituba');}
+function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));}
+function avisoParcialHTML(){return soPituba()?'':'<div class="un-aviso">⚠️ Estes dados ainda incluem apenas a Pituba. Alphaville e Vilas entram na próxima fase.</div>';}
+function syncUnidadesUI(){
+  document.querySelectorAll('#unRow input[type=checkbox]').forEach(c=>{c.checked=UNIDADES_SEL.includes(c.value);});
+  const l=document.getElementById('ulbl');
+  if(l)l.textContent=UNIDADES_TODAS.filter(u=>UNIDADES_SEL.includes(u)).map(u=>u+(UNIDADES_ERRO.includes(u)?' (sem dados)':'')).join(' + ');
+}
+function mudarUnidades(lista){
+  UNIDADES_SEL=UNIDADES_TODAS.filter(u=>lista.includes(u));
+  if(!UNIDADES_SEL.length)UNIDADES_SEL=DEFAULT_UNIDADES.slice();
+  salvarUnidades();filtrarVhistUnidades();syncUnidadesUI();aplicar();
+}
+function toggleUnidade(cb){
+  const marcadas=[...document.querySelectorAll('#unRow input[type=checkbox]:checked')].map(c=>c.value);
+  if(!marcadas.length){cb.checked=true;return;} // pelo menos uma sempre marcada
+  mudarUnidades(marcadas);
+}
+function selTodasUnidades(){mudarUnidades(UNIDADES_TODAS.slice());}
+function parseVendasUnidade(rows,unidade){
+  return rows.map(r=>{
+    let dt='';
+    const dv=r.c?.[1]?.v||'';
+    if(typeof dv==='string'&&dv.startsWith('Date(')){
+      const p=dv.replace('Date(','').replace(')','').split(',');
+      dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');
+    } else if(typeof dv==='string') dt=dv.substring(0,10);
+    const st=r.c?.[7]?.v||'';
+    return{id:String(r.c?.[0]?.v??''),data:dt,canal:r.c?.[2]?.v||'',subtotal:parseFloat(r.c?.[3]?.v||0),valor:parseFloat(r.c?.[4]?.v||0),desconto:parseFloat(r.c?.[5]?.v||0),entrega:parseFloat(r.c?.[6]?.v||0),cancelado:String(st).trim().toLowerCase()==='cancelado',unidade};
+  }).filter(d=>/^\d+$/.test(d.id)); // ignora cabeçalho/linhas sem id numérico
+}
 
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
@@ -547,6 +612,24 @@ async function load(){
       }).filter(d=>d.id); // mantém cancelados para cálculo
       console.log('Vendas_Historico:',VHIST.length,'(incl. cancelados)');
     }catch(e){console.log('VH err:',e);}
+    VHIST.forEach(d=>{d.unidade='Pituba';});
+    VHIST_PITUBA=VHIST;
+
+    // Vendas_Historico das outras unidades (cada aba com seu próprio try/catch)
+    UNIDADES_ERRO=[];
+    const outrasUn=await Promise.all([['Alphaville','Vendas_Historico_Alphaville'],['Vilas','Vendas_Historico_Vilas']].map(async([un,aba])=>{
+      try{
+        const resp=await fetch(BASE+encodeURIComponent(aba));
+        const txt=await resp.text();
+        const js=JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+        const lst=parseVendasUnidade(js.table.rows||[],un);
+        if(!lst.length)throw new Error('nenhuma linha válida (aba ausente ou vazia)');
+        console.log(aba+':',lst.length,'(incl. cancelados)');
+        return lst;
+      }catch(e){console.log(aba+' err:',e);UNIDADES_ERRO.push(un);return[];}
+    }));
+    VHIST_ALL=VHIST_PITUBA.concat(...outrasUn);
+    filtrarVhistUnidades();
 
     // Vendas_Raw
     try{
@@ -674,6 +757,8 @@ async function load(){
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
     document.getElementById('stxt').textContent='Sincronizado hoje';
+    if(UNIDADES_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ '+UNIDADES_ERRO.join(', ')+' indisponível';st.title='Falha ao carregar vendas de: '+UNIDADES_ERRO.join(', ');}
+    syncUnidadesUI();
     return true;
   }catch(e){
     document.getElementById('sdot').style.background='#ef4444';
@@ -756,6 +841,10 @@ function aplicar(){
     else if(PAGE==='metaads'){pgMetaAds();return;}
     else if(PAGE==='semanas'){pgSemanas();return;}
     else if(PAGE==='usuarios'){pgUsuarios();return;}
+    // Aviso de dados parciais (módulos que ainda usam apenas dados da Pituba)
+    if(!soPituba()&&['sabores','horarios','dias','bairros','clientes','cupons','adicionais','tabela'].includes(PAGE)){
+      const mcEl=document.getElementById('mc');if(mcEl)mcEl.insertAdjacentHTML('afterbegin',avisoParcialHTML());
+    }
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
     document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro: '+e.message+'</div>';
@@ -777,13 +866,15 @@ function pgOverview(at,an,i,f,ci,cf){
   // Pedidos únicos: VHIST (histórico completo) → VRAW → fallback IDs de RAW
   const vhPedA = VHIST.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado);
   const vhPedB = VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&!v.cancelado);
-  const pedA = vhPedA.length>0 ? vhPedA.length : (vrawA.length>0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size);
-  const pedB = vhPedB.length>0 ? vhPedB.length : (vrawB.length>0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size);
+  // Fallbacks (Vendas_Raw / Sabores) são só da Pituba: só valem se a Pituba estiver selecionada
+  const fbPit=incluiPituba();
+  const pedA = vhPedA.length>0 ? vhPedA.length : (!fbPit ? 0 : (vrawA.length>0 ? vrawA.length : new Set(at.map(d=>d.id).filter(Boolean)).size));
+  const pedB = vhPedB.length>0 ? vhPedB.length : (!fbPit ? 0 : (vrawB.length>0 ? vrawB.length : new Set(an.map(d=>d.id).filter(Boolean)).size));
   // Cancelamentos: VHIST primeiro, fallback VCMP
   const vhCancA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
   const vhCancB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
-  const canSrcA=vhCancA.length>0?vhCancA:VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel);
-  const canSrcB=vhCancB.length>0?vhCancB:VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel);
+  const canSrcA=vhCancA.length>0?vhCancA:(!fbPit?[]:VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel));
+  const canSrcB=vhCancB.length>0?vhCancB:(!fbPit?[]:VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel));
   const canA=canSrcA.length;
   const canB=canSrcB.length;
   // Ticket médio estimado via VHIST para calcular valor dos cancelamentos
@@ -794,6 +885,12 @@ function pgOverview(at,an,i,f,ci,cf){
   const canEstA=canA*tickOvA;
   const canEstB=canB*tickOvB;
   const d1=dlt(totA,totB),d2=dlt(pedA,pedB),d3=dlt(sabA,sabB),d4=dlt(canEstA,canEstB);
+  // Faturamento (pedidos não cancelados) e ticket médio — respeitam as unidades selecionadas
+  const fatOvA=vhOvA.reduce((s,v)=>s+(v.valor||0),0);
+  const fatOvB=vhOvB.reduce((s,v)=>s+(v.valor||0),0);
+  const dFat=dlt(fatOvA,fatOvB),dTick=dlt(tickOvA,tickOvB);
+  const soPit=soPituba();
+  const notaPit=soPit?'':'<div style="font-size:9px;color:var(--yellow);margin-top:3px">⚠️ apenas Pituba</div>';
 
   const mapaA=agrupS(at),mapaB=agrupS(an);
   const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
@@ -825,12 +922,15 @@ function pgOverview(at,an,i,f,ci,cf){
   an.forEach(d=>{mEB[d.data]=(mEB[d.data]||0)+d.qtd;});
 
   mc.innerHTML=
-    '<div class="metrics">'+
-    '<div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">'+fmt(totA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmt(totB)+')</span></div></div>'+
+    '<div class="metrics m6">'+
+    '<div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">'+fmt(totA)+'</div>'+notaPit+'<div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmt(totB)+')</span></div></div>'+
     '<div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Pedidos únicos</div><div class="mc-val">'+fmt(pedA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmt(pedB)+')</span></div></div>'+
-    '<div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">'+sabA+'</div><div class="mc-comp">'+badge(d3)+'<span class="mc-ct">vs ant. ('+sabB+')</span></div></div>'+
+    '<div class="mc teal"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento</div><div class="mc-val">'+fmtR(fatOvA)+'</div><div class="mc-comp">'+badge(dFat)+'<span class="mc-ct">vs ant. ('+fmtR(fatOvB)+')</span></div></div>'+
+    '<div class="mc blue"><div class="mc-icon">🎟️</div><div class="mc-lbl">Ticket médio</div><div class="mc-val">'+fmtR(tickOvA)+'</div><div class="mc-comp">'+badge(dTick)+'<span class="mc-ct">vs ant. ('+fmtR(tickOvB)+')</span></div></div>'+
+    '<div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">'+sabA+'</div>'+notaPit+'<div class="mc-comp">'+badge(d3)+'<span class="mc-ct">vs ant. ('+sabB+')</span></div></div>'+
     '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">'+fmtR(canEstA)+'</div><div style="font-size:9px;color:var(--txt3);margin-top:3px">⚠️ estimativa baseada no ticket médio</div><div class="mc-comp">'+badge(d4,true)+'<span style="font-size:10px;color:var(--txt3)">'+canA+' pedidos</span><span class="mc-ct">vs ant. ('+fmtR(canEstB)+')</span></div></div>'+
     '</div>'+
+    avisoParcialHTML()+
     '<div class="g31">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução diária de pizzas vendidas</div><div class="card-sub">Quantidade de pizzas por dia · atual vs anterior</div></div></div><canvas id="cEv" height="170"></canvas></div>'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 5 sabores</div><div class="card-sub">Com comparativo</div></div></div>'+topRows+'</div>'+
@@ -884,8 +984,9 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   const vhB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs);
 
   // Fallback: usa Vendas_Raw se Vendas_Historico não tiver dados do período
-  const vrA=VRAW.filter(v=>v.data>=is&&v.data<=fs);
-  const vrB=VRAW.filter(v=>v.data>=cis&&v.data<=cfs);
+  // (Vendas_Raw é só da Pituba: sem fallback quando a Pituba não está selecionada)
+  const vrA=incluiPituba()?VRAW.filter(v=>v.data>=is&&v.data<=fs):[];
+  const vrB=incluiPituba()?VRAW.filter(v=>v.data>=cis&&v.data<=cfs):[];
 
   // Para faturamento: exclui cancelados
   const fA = (vhA.length>0 ? vhA : vrA.map(v=>({...v,valor:v.total||0,desconto:v.desconto||0,entrega:v.entrega||0,cancelado:false}))).filter(v=>!v.cancelado);
@@ -903,8 +1004,8 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   // Cancelados em R$ — fallback para VCMP se VHIST não tiver dados do período
   const vhCancelA=VHIST.filter(v=>v.data>=is&&v.data<=fs&&v.cancelado);
   const vhCancelB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancelado);
-  const cancelSrcA=vhCancelA.length>0?vhCancelA:VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel);
-  const cancelSrcB=vhCancelB.length>0?vhCancelB:VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel);
+  const cancelSrcA=vhCancelA.length>0?vhCancelA:(!incluiPituba()?[]:VCMP.filter(v=>v.data>=is&&v.data<=fs&&v.cancel));
+  const cancelSrcB=vhCancelB.length>0?vhCancelB:(!incluiPituba()?[]:VCMP.filter(v=>v.data>=cis&&v.data<=cfs&&v.cancel));
   const cancelValA=cancelSrcA.reduce((s,v)=>s+(v.valor||v.subtotal||v.total||0),0);
   const cancelValB=cancelSrcB.reduce((s,v)=>s+(v.valor||v.subtotal||v.total||0),0);
   const cancelQtA=cancelSrcA.length;
@@ -1401,7 +1502,7 @@ function pgClientes(){
   inactivePage=0;
   const inactiveSortBtns=[['last_asc','Último pedido ↑'],['last_desc','Último pedido ↓'],['days_asc','Inativo há ↑'],['days_desc','Inativo há ↓'],['orders_desc','Pedidos ↓'],['spent_desc','Total gasto ↓']].map(([m,l])=>`<button class="inactive-sort-btn" data-sort="${m}" onclick="sortInactive('${m}')" style="font-size:10px;font-weight:600;padding:4px 8px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;background:${m===inactiveSort?'var(--blue)':'var(--bg3)'};color:${m===inactiveSort?'#fff':'var(--txt2)'}">${l}</button>`).join('');
   const top3LTVHtml=top3LTV.map((v,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;${i<top3LTV.length-1?'border-bottom:1px solid var(--border)':''}"><span style="font-size:11px;color:var(--txt2);font-weight:600">${v.nome}</span><span style="font-size:11px;color:var(--green);font-weight:700">${fmtR(v.ltv)}/ano</span></div>`).join('')||'<div style="color:var(--txt3);font-size:11px">Dados insuficientes</div>';
-  const pedidosVHIST=VHIST.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado).length;
+  const pedidosVHIST=VHIST_PITUBA.filter(v=>v.data>=is&&v.data<=fs&&!v.cancelado).length;
   const semCadastro=Math.max(pedidosVHIST-dados.length,0);
 
   mc.innerHTML=`
@@ -3390,7 +3491,7 @@ async function pgMetaAds(preset){
 
     // Agrupar VHIST por data (pedidos não cancelados)
     const saipByDate={};
-    (VHIST||[]).filter(v=>!v.cancelado&&v.data>=iniS&&v.data<=fimS).forEach(v=>{
+    (VHIST_PITUBA||[]).filter(v=>!v.cancelado&&v.data>=iniS&&v.data<=fimS).forEach(v=>{
       if(!saipByDate[v.data])saipByDate[v.data]={pedidos:0,faturamento:0};
       saipByDate[v.data].pedidos++;
       saipByDate[v.data].faturamento+=v.valor||0;
@@ -3669,6 +3770,7 @@ async function iniciarApp() {
 // Ponto de entrada
 let _appIniciado = false;
 applyTheme(localStorage.getItem(THEME_KEY)||'dark');
+syncUnidadesUI();
 (async()=>{
   const lo = document.getElementById('loginOverlay');
   if (verificarSessao()) {
