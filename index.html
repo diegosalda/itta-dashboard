@@ -2784,8 +2784,32 @@ function pgCanais(i,f,ci,cf){
       '<td '+tdR+'>'+(vT!==null?badge(vT):'-')+'</td>'+
       '</tr>';
   }).join('');
+  // Linha Total: soma de TODOS os pedidos de cada período (todos os canais, inclusive os que só existem no período anterior)
+  const somaTudo=x=>Object.values(x).reduce((t,c)=>({fat:t.fat+c.fat,ped:t.ped+c.ped,canQt:t.canQt+c.canQt,canVal:t.canVal+c.canVal,desc:t.desc+c.desc,ent:t.ent+c.ent}),{fat:0,ped:0,canQt:0,canVal:0,desc:0,ent:0});
+  const TA=somaTudo(mA),TB=somaTudo(mB);
+  const tTkA=TA.ped>0?TA.fat/TA.ped:null,tTkB=TB.ped>0?TB.fat/TB.ped:null;
+  const tTotPed=TA.ped+TA.canQt;
+  const tvF=dlt(TA.fat,TB.fat),tvP=dlt(TA.ped,TB.ped),tvT=(tTkA!==null&&tTkB!==null)?dlt(tTkA,tTkB):null;
+  const tdT='style="text-align:right;border-top:2px solid var(--border2)"';
+  const linhaTotal='<tr style="font-weight:700;background:var(--bg3)">'+
+    '<td style="border-top:2px solid var(--border2)">Total</td>'+
+    '<td '+tdT+'>'+fmtR(TA.fat)+'</td>'+
+    '<td '+tdT+'>100%</td>'+
+    '<td '+tdT+'>'+fmt(TA.ped)+'</td>'+
+    '<td '+tdT+'>'+(tTkA!==null?fmtR(tTkA):'—')+'</td>'+
+    '<td '+tdT+'>'+fmt(TA.canQt)+'</td>'+
+    '<td '+tdT+'>'+(tTotPed>0?pct1(TA.canQt/tTotPed*100):'—')+'</td>'+
+    '<td '+tdT+'>'+fmtR(TA.canVal)+'</td>'+
+    '<td '+tdT+'>'+fmtR(TA.desc)+'</td>'+
+    '<td '+tdT+'>'+(TA.ped>0?fmtR(TA.desc/TA.ped):'—')+'</td>'+
+    '<td '+tdT+'>'+fmtR(TA.ent)+'</td>'+
+    '<td '+tdT+'>'+(TA.ped>0?fmtR(TA.ent/TA.ped):'—')+'</td>'+
+    '<td '+tdT+'>'+(tvF!==null?badge(tvF):'—')+'</td>'+
+    '<td '+tdT+'>'+(tvP!==null?badge(tvP):'—')+'</td>'+
+    '<td '+tdT+'>'+(tvT!==null?badge(tvT):'—')+'</td>'+
+    '</tr>';
   const tabela='<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Desempenho por canal</div><div class="card-sub">Ordenado por faturamento · pedidos não cancelados · variação vs período anterior</div></div></div>'+
-    '<div class="tw"><table><thead><tr><th>Canal</th><th '+thR+'>Faturamento</th><th '+thR+'>% do total</th><th '+thR+'>Pedidos</th><th '+thR+'>Ticket médio</th><th '+thR+'>Cancel.</th><th '+thR+'>% cancel.</th><th '+thR+'>Valor cancel.</th><th '+thR+'>Descontos</th><th '+thR+'>Desc./pedido</th><th '+thR+'>Taxa entrega</th><th '+thR+'>Entrega/pedido</th><th '+thR+'>Var. fat.</th><th '+thR+'>Var. pedidos</th><th '+thR+'>Var. ticket</th></tr></thead><tbody>'+linhas+'</tbody></table></div></div>';
+    '<div class="tw"><table><thead><tr><th>Canal</th><th '+thR+'>Faturamento</th><th '+thR+'>% do total</th><th '+thR+'>Pedidos</th><th '+thR+'>Ticket médio</th><th '+thR+'>Cancel.</th><th '+thR+'>% cancel.</th><th '+thR+'>Valor cancel.</th><th '+thR+'>Descontos</th><th '+thR+'>Desc./pedido</th><th '+thR+'>Taxa entrega</th><th '+thR+'>Entrega/pedido</th><th '+thR+'>Var. fat.</th><th '+thR+'>Var. pedidos</th><th '+thR+'>Var. ticket</th></tr></thead><tbody>'+linhas+linhaTotal+'</tbody></table></div></div>';
 
   // Faturamento por mês, por canal (período atual)
   const MES_AB=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -2811,7 +2835,11 @@ function pgCanais(i,f,ci,cf){
     perA.forEach(v=>{if(v.cancelado)return;const c=nomeCanal(v.canal);if(!cu[c])cu[c]={};if(!cu[c][v.unidade])cu[c][v.unidade]={fat:0,ped:0};cu[c][v.unidade].fat+=v.valor||0;cu[c][v.unidade].ped++;});
     const hdr='<tr><th>Canal</th>'+unSel.map(u=>'<th '+thR+'>'+u+' · fat.</th><th '+thR+'>'+u+' · ped.</th>').join('')+'</tr>';
     const rows=canais.map(c=>'<tr><td style="font-weight:600;white-space:nowrap">'+c+'</td>'+unSel.map(u=>{const x=(cu[c]||{})[u]||{fat:0,ped:0};return '<td '+tdR+'>'+fmtR(x.fat)+'</td><td '+tdR+'>'+fmt(x.ped)+'</td>';}).join('')+'</tr>').join('');
-    cruz='<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Canal × unidade</div><div class="card-sub">Faturamento e pedidos não cancelados no período</div></div></div><div class="tw"><table><thead>'+hdr+'</thead><tbody>'+rows+'</tbody></table></div></div>';
+    const totU={};unSel.forEach(u=>{totU[u]={fat:0,ped:0};});
+    Object.values(cu).forEach(porUn=>Object.entries(porUn).forEach(([u,x])=>{if(totU[u]){totU[u].fat+=x.fat;totU[u].ped+=x.ped;}}));
+    const tdU='style="text-align:right;border-top:2px solid var(--border2)"';
+    const rowTot='<tr style="font-weight:700;background:var(--bg3)"><td style="border-top:2px solid var(--border2)">Total</td>'+unSel.map(u=>'<td '+tdU+'>'+fmtR(totU[u].fat)+'</td><td '+tdU+'>'+fmt(totU[u].ped)+'</td>').join('')+'</tr>';
+    cruz='<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Canal × unidade</div><div class="card-sub">Faturamento e pedidos não cancelados no período</div></div></div><div class="tw"><table><thead>'+hdr+'</thead><tbody>'+rows+rowTot+'</tbody></table></div></div>';
   }
 
   mc.innerHTML=cards+tabela+cruz+graficos;
