@@ -248,45 +248,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .sfi-val{font-size:13px;font-weight:800;color:var(--green);flex-shrink:0}
 
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* PAUTA DO DIA */
-.pauta-area-tab{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.pauta-tab{font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;transition:all .15s;font-family:inherit}
-.pauta-tab.active{background:var(--r);color:#fff;border-color:var(--r)}
-.pauta-turno-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:18px}
-.pauta-turno-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
-.turno-ab{background:rgba(34,197,94,.15);color:var(--green)}
-.turno-fe{background:rgba(239,68,68,.15);color:var(--r)}
-.pauta-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);margin-bottom:6px;transition:all .2s;cursor:pointer}
-.pauta-item:hover{border-color:var(--border2)}
-.pauta-item.feito{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25)}
-.pauta-item.pendente-atrasado{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.05)}
-.pauta-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s;margin-top:1px}
-.pauta-item.feito .pauta-check{background:var(--green);border-color:var(--green);color:#fff}
-.pauta-info{flex:1;min-width:0}
-.pauta-nome{font-size:12px;font-weight:600;color:var(--txt);line-height:1.4}
-.pauta-item.feito .pauta-nome{color:var(--txt3);text-decoration:line-through}
-.pauta-meta{font-size:10px;color:var(--txt3);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.pauta-quem{font-size:10px;font-weight:600;color:var(--green)}
-.pauta-foto-btn{font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;flex-shrink:0;margin-top:1px}
-.pauta-foto-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;cursor:pointer;border:1px solid var(--border2)}
-.pauta-prog-wrap{background:var(--bg3);border-radius:6px;height:6px;margin-bottom:4px;overflow:hidden}
-.pauta-prog-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),var(--teal));transition:width .4s}
-.pauta-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-.pauta-stat{background:var(--bg2);border-radius:10px;padding:12px 14px;border:1px solid var(--border);text-align:center}
-.pauta-stat-val{font-size:22px;font-weight:800}
-.pauta-stat-lbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.pauta-gestor-area{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:14px;margin-bottom:10px}
-.pauta-gestor-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pauta-gestor-titulo{font-size:13px;font-weight:700}
-.pauta-gestor-prog{font-size:11px;color:var(--txt3)}
-.pauta-pend-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px}
-.pauta-pend-item:last-child{border:none;padding-bottom:0}
-.pauta-pend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--r)}
-.pauta-hist-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px}
-.pauta-hist-row:last-child{border:none;padding-bottom:0}
 </style>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'></script>
 </head>
 <body>
 <div class="overlay" id="ov" onclick="closeSb()"></div>
@@ -304,9 +266,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('clientes',this)"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" onclick="goPage('cupons',this)"><span class="nav-icon">🎟️</span>Cupons</div>
       <div class="nav-item" onclick="goPage('adicionais',this)"><span class="nav-icon">📦</span>Adicionais</div>
-      <div class="nav-item" onclick="goPage('contas',this)"><span class="nav-icon">💰</span>Contas a Pagar</div>
-      <div class="nav-item" onclick="goPage('pauta',this)"><span class="nav-icon">✅</span>Pauta do Dia</div>
       <div class="nav-item" onclick="goPage('semanas',this)"><span class="nav-icon">📅</span>Semanas</div>
+      <div class="nav-item" onclick="goPage('canais',this)"><span class="nav-icon">📊</span>Canais</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
       <div class="nav-item" onclick="goPage('dre',this)"><span class="nav-icon">📈</span>DRE</div>
@@ -414,9 +375,8 @@ const DADOS_POR_MODULO={
   cupons:             ['Pituba'],
   adicionais:         ['Pituba'],
   tabela:             ['Pituba'],
-  contas:             ['Pituba'],
   dre:                ['Pituba'],
-  pauta:              ['Pituba'],
+  canais:             ['Pituba','Alphaville','Vilas'],
 };
 // Para limitar período padrão de carregamento (últimos 6 meses = ~180 dias)
 // A planilha completa é carregada, filtros são aplicados no cliente
@@ -424,7 +384,7 @@ const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Cal
 
 function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()===s.toLowerCase())return x;if(s.toLowerCase().includes(x.toLowerCase())||x.toLowerCase().includes(s.toLowerCase()))return x;}return s;}
 
-let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],CONTAS=[],ITENS=[];
+let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],ITENS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 let VHIST_ALL=[],VHIST_PITUBA=[],UNIDADES_ERRO=[];
 let UNIDADES_SEL=lerUnidadesSalvas();
@@ -509,7 +469,7 @@ function parseVendasUnidade(rows,unidade){
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-const TITULOS_PAG={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',adicionais:'Adicionais',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia',semanas:'Semanas do Mês'};
+const TITULOS_PAG={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',adicionais:'Adicionais',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',semanas:'Semanas do Mês',canais:'Canais'};
 function goPage(p,el){if(!podeVerModulo(p))return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');document.getElementById('pttl').textContent=TITULOS_PAG[p]||p;closeSb();aplicar();}
 
 // Dias chips
@@ -689,7 +649,7 @@ async function load(){
     VHIST_ALL=VHIST_PITUBA.concat(...outrasUn);
     filtrarVhistUnidades();
 
-    if(carregaPituba){ // abas só da Pituba: Vendas_Raw, Bairros_Raw, CEPs_Coords, Clientes_Raw, Cupons_Raw, Itens_Raw, ContasPagar
+    if(carregaPituba){ // abas só da Pituba: Vendas_Raw, Bairros_Raw, CEPs_Coords, Clientes_Raw, Cupons_Raw, Itens_Raw
     // Vendas_Raw
     try{
       const rv=await fetch(BASE+encodeURIComponent('Vendas_Raw'));
@@ -799,19 +759,7 @@ async function load(){
       }).filter(d=>d.data&&d.item);
       console.log('Itens_Raw:',ITENS.length,'registros');
     }catch(e){console.log('Itens_Raw err:',e);}
-
-    // ContasPagar
-    try{
-      const urlCP=BASE+encodeURIComponent('ContasPagar')+'&cachebust='+Date.now();
-      const respCP=await fetch(urlCP);
-      const txtCP=await respCP.text();
-      const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-      const parseDate=v=>{if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}return typeof v==='string'?v.substring(0,10):'';};
-      const parseValor=v=>parseFloat((String(v??'0')).replace('R$','').replace(/\./g,'').replace(',','.').trim())||0;
-      CONTAS=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||'cp_'+i),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',formaPagamento:r.c[12]?.v||''};}).filter(d=>d.nome);
-      console.log('ContasPagar:',CONTAS.length,'registros');
-    }catch(e){console.log('ContasPagar err:',e);}
-    } // fim if(carregaPituba) — Vendas_Raw … ContasPagar
+    } // fim if(carregaPituba) — Vendas_Raw … Itens_Raw
 
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
@@ -885,7 +833,7 @@ function aplicar(){
     console.log('aplicar v2.0: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
     Object.keys(CHARTS).forEach(k=>dC(k));
-    if(!podeVerModulo(PAGE)){document.getElementById('mc').innerHTML='<div class="loading" style="color:var(--txt3)">Você não tem acesso a este módulo.</div>';return;}
+    if(!podeVerModulo(PAGE)){document.getElementById('mc').innerHTML='<div class="loading" style="color:var(--txt3)">'+(primeiroModuloLiberado()?'Você não tem acesso a este módulo.':'Você ainda não tem módulos liberados. Fale com o administrador.')+'</div>';return;}
     if(semDadosNoModulo(PAGE)){document.getElementById('mc').innerHTML='<div class="loading" style="color:var(--txt3)">Os dados deste módulo ainda não estão disponíveis para '+listaUnidadesTxt(UNIDADES_SEL)+'.</div>';return;}
     if(PAGE==='financeiro'){pgFinanceiro(at,an,i,f,ci,cf);}
     else if(PAGE==='analytics')pgOverview(at,an,i,f,ci,cf);
@@ -896,11 +844,10 @@ function aplicar(){
     else if(PAGE==='clientes')pgClientes();
     else if(PAGE==='cupons')pgCupons();
     else if(PAGE==='adicionais')pgAdicionais();
-    else if(PAGE==='contas')pgContas();
     else if(PAGE==='tabela')pgTabela(at,an);
     else if(PAGE==='dre'){pgDRE();return;}
-    else if(PAGE==='pauta'){pgPauta();return;}
     else if(PAGE==='semanas'){pgSemanas();return;}
+    else if(PAGE==='canais'){pgCanais(i,f,ci,cf);return;}
     else if(PAGE==='usuarios'){pgUsuarios();return;}
     // Aviso de dados parciais (módulos que ainda usam apenas dados da Pituba)
     if(!soPituba()&&['sabores','horarios','dias','bairros','clientes','cupons','adicionais','tabela'].includes(PAGE)){
@@ -1272,11 +1219,6 @@ let _byFat=[];
 let cupomSearch='';
 let _cupomRanking=[];
 let _cupomMaxUsos=1;
-let contasMes=new Date();
-let _contasLoading=false;
-let contasFilter='todos';
-let showContaForm=false;
-let showBarcodeInput=false;
 
 function renderDistTable(bucketList,sort){
   const sorted=[...bucketList];
@@ -1757,13 +1699,12 @@ const MODULOS_MAP = {
   bairros:    7,
   clientes:   8,
   cupons:     9,
-  contas:     10,
   financeiro: 11,
   tabela:     12,
-  pauta:      15, // P (Q = 16 é Unidades)
   adicionais: 17, // R
   semanas:    18, // S
   dre:        19, // T
+  canais:     20, // U
 };
 const COL_UNIDADES = 16; // Q — lista separada por vírgula (Pituba, Alphaville, Vilas)
 
@@ -1868,30 +1809,40 @@ function entrarNoDashboard() { _appIniciado=true;
   iniciarApp();
 }
 
-// Aplica permissões no menu (módulos) e no seletor de unidades
+// Primeiro módulo liberado ao usuário, na ordem do menu (ou null)
+function primeiroModuloLiberado() {
+  for (const item of document.querySelectorAll('.nav-item')) {
+    const m = (item.getAttribute('onclick') || '').match(/goPage\('(\w+)'/);
+    if (m && podeVerModulo(m[1])) return { page: m[1], item };
+  }
+  return null;
+}
+
+// Aplica permissões no menu (módulos) e no seletor de unidades.
+// Refaz o menu inteiro a cada login: mostra os itens liberados e esconde só os bloqueados.
 function aplicarPermissoes() {
   if (!USUARIO_ATUAL) return;
   // Unidades: cruza a seleção guardada no navegador com as permitidas
   UNIDADES_SEL = lerUnidadesSalvas();
   filtrarVhistUnidades();
   syncUnidadesUI();
-  if (ehGestor()) return;
 
-  // Esconde do menu os módulos não liberados
-  let primeira = null;
   document.querySelectorAll('.nav-item').forEach(item => {
-    const match = (item.getAttribute('onclick') || '').match(/goPage\('(\w+)'/);
-    if (!match) return;
-    const page = match[1];
-    if (!podeVerModulo(page)) { item.style.display='none'; item.classList.remove('active'); return; }
-    if (!primeira) primeira = { page, item };
+    const m = (item.getAttribute('onclick') || '').match(/goPage\('(\w+)'/);
+    if (!m) return;
+    item.classList.remove('active');
+    item.style.display = podeVerModulo(m[1]) ? 'flex' : 'none';
   });
 
-  // Página inicial = primeira permitida, na ordem do menu
-  if (primeira && !podeVerModulo(PAGE)) {
-    PAGE = primeira.page;
-    primeira.item.classList.add('active');
+  // Página inicial = primeiro módulo liberado (sem nenhum: aplicar() mostra o aviso)
+  const prim = primeiroModuloLiberado();
+  if (prim) {
+    PAGE = prim.page;
+    prim.item.classList.add('active');
     document.getElementById('pttl').textContent = TITULOS_PAG[PAGE] || PAGE;
+  } else {
+    PAGE = '';
+    document.getElementById('pttl').textContent = '';
   }
 }
 
@@ -1900,313 +1851,6 @@ function logout() {
   localStorage.removeItem(SESSION_KEY);
   USUARIO_ATUAL = null;
   location.reload();
-}
-
-// ================================================================
-// CONTAS A PAGAR
-// ================================================================
-
-function maskCurrency(el){
-  let v=el.value.replace(/\D/g,'');
-  if(!v){el.value='';return;}
-  v=(parseInt(v)/100).toFixed(2);
-  el.value='R$ '+v.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-}
-
-function pgContas(){
-  const mc=document.getElementById('mc');
-  if(!mc)return;
-  if(CONTAS.length===0&&!window._contasAutoLoaded){window._contasAutoLoaded=true;mc.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3)">⏳ Carregando contas...</div>';recarregarContas();return;}
-  const hoje=new Date();
-  const hj=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
-  const em7=new Date(hj.getTime()+7*24*60*60*1000);
-  const hjStr=ds(hj),em7Str=ds(em7);
-  const ano=contasMes.getFullYear(),mes=contasMes.getMonth();
-  const mesNome=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mes];
-  const mesStr=`${ano}-${String(mes+1).padStart(2,'0')}`;
-  let visivel=CONTAS.filter(c=>c.vencimento&&c.vencimento.startsWith(mesStr));
-  if(contasFilter==='pendentes')visivel=visivel.filter(c=>c.status!=='pago');
-  else if(contasFilter==='pagos')visivel=visivel.filter(c=>c.status==='pago');
-  const atrasadas=CONTAS.filter(c=>c.vencimento&&c.vencimento<hjStr&&c.status!=='pago');
-  const emBreve=CONTAS.filter(c=>c.vencimento&&c.vencimento>=hjStr&&c.vencimento<=em7Str&&c.status!=='pago');
-  let alertHtml='';
-  if(atrasadas.length||emBreve.length){
-    alertHtml='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">';
-    if(atrasadas.length)alertHtml+=`<span style="background:rgba(239,68,68,.15);color:var(--r);border:1px solid rgba(239,68,68,.3);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600">🔴 ${atrasadas.length} conta${atrasadas.length>1?'s':''} atrasada${atrasadas.length>1?'s':''}</span>`;
-    if(emBreve.length){const nearest=[...emBreve].sort((a,b)=>a.vencimento.localeCompare(b.vencimento))[0];const daysLeft=Math.ceil((new Date(nearest.vencimento+'T12:00:00')-hj)/(1000*60*60*24));const breveTxt=emBreve.length===1?`🟠 Vence em ${daysLeft} dia${daysLeft!==1?'s':''} · ${nearest.nome}`:`🟠 ${emBreve.length} vencem nos próximos 7 dias`;alertHtml+=`<span style="background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.3);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600">${breveTxt}</span>`;}
-    alertHtml+='</div>';
-  }
-  const firstDay=new Date(ano,mes,1),lastDay=new Date(ano,mes+1,0);
-  const startDow=firstDay.getDay(),totalDays=lastDay.getDate();
-  const dayMap={};
-  visivel.forEach(c=>{if(!c.vencimento)return;const d=parseInt(c.vencimento.split('-')[2]);if(!dayMap[d])dayMap[d]=[];dayMap[d].push(c);});
-  const dayNames=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  let cells=dayNames.map(d=>`<div style="text-align:center;font-size:10px;font-weight:700;color:var(--txt3);padding:4px 0">${d}</div>`).join('');
-  for(let i=0;i<startDow;i++)cells+=`<div></div>`;
-  for(let d=1;d<=totalDays;d++){
-    const dateStr=`${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday=dateStr===hjStr;
-    const contas=dayMap[d]||[];
-    const pills=contas.map(c=>{
-      const isPago=c.status==='pago';
-      const isAtrasado=!isPago&&c.vencimento<hjStr;
-      const color=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
-      const bg=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
-      const nome=c.nome.length>10?c.nome.substring(0,10)+'…':c.nome;
-      return`<div style="background:${bg};color:${color};border-radius:4px;padding:1px 4px;font-size:9px;font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>`;
-    }).join('');
-    cells+=`<div onclick="showDayDetail('${dateStr}')" style="border:1px solid ${isToday?'var(--r)':'var(--border)'};border-radius:6px;padding:3px 4px;min-height:52px;background:${isToday?'rgba(224,53,53,.06)':'var(--bg3)'};cursor:pointer"><div style="font-size:10px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--r)':'var(--txt3)'};margin-bottom:1px">${d}</div>${pills}</div>`;
-  }
-  const sorted=[...visivel].sort((a,b)=>(a.vencimento||'').localeCompare(b.vencimento||''));
-  const tableRows=sorted.map(c=>{
-    const isPago=c.status==='pago';
-    const isAtrasado=!isPago&&c.vencimento&&c.vencimento<hjStr;
-    const sc=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
-    const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
-    const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
-    const vcto=c.vencimento?c.vencimento.split('-').reverse().join('/'):'–';
-    const safeId=c.id.replace(/'/g,"\\'");
-    return`<tr onclick="abrirDetalhesConta('${safeId}')" style="cursor:pointer"><td>${c.nome}</td><td style="color:var(--txt3)">${c.categoria}</td><td style="text-align:center">${vcto}</td><td style="text-align:right;color:var(--green)">${fmtR(c.valor)}</td><td style="text-align:center"><span style="background:${sb};color:${sc};border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">${sl}</span></td><td style="text-align:center;white-space:nowrap">${!isPago?`<button onclick="event.stopPropagation();marcarContaPaga('${safeId}',true)" style="font-size:11px;padding:3px 8px;border-radius:5px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;margin:1px">✓ Pago</button>`:''}<button onclick="event.stopPropagation();editarConta('${safeId}')" style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;margin:1px">✏️ Editar</button><button onclick="event.stopPropagation();excluirConta('${safeId}',true)" style="font-size:11px;padding:3px 8px;border-radius:5px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-family:inherit;margin:1px">Excluir</button></td></tr>`;
-  }).join('');
-  const categorias={'Custos Adm':['Mat. Escritório','Manutenção','Benfeitorias','Beneditta'],'Custos Operacionais':['Água','Aluguel','Contador','Detetização','Segurança','Energia','Gás','Extras','Jurídico','Software','Internet','Seguro','Taxas Cartão','Alug. Máq.'],'Funcionários':['Salário','Transporte','Comissão','Uber','Férias','Extras','13°','Folguista','Pró-Labore','Vale'],'Embalagem':['Caixas de Pizza','Papéis','Lacre'],'Impostos':['DAS - Simples','Diversos','DARF','FGTS'],'Marketing':['Tráfego Pago','Agência de Marketing','iFood Ads'],'Insumos':['Insumos','Bebidas'],'Logística':['Motoboys'],'Empréstimos':['Extras','Saídas Caixa Econômica','Caixa Econ.']};
-  const catOptions=Object.entries(categorias).map(([grp,items])=>`<optgroup label="${grp}">${items.map(it=>`<option value="${grp} · ${it}">${it}</option>`).join('')}</optgroup>`).join('');
-  const iStyle='width:100%;font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:inherit;box-sizing:border-box';
-  const formHtml=showContaForm?`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg3)"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Nome *</label><input id="cNome" type="text" placeholder="Ex: Aluguel" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Categoria *</label><select id="cCat" style="${iStyle}"><option value="">Selecione...</option>${catOptions}</select></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Valor *</label><input id="cValor" type="number" step="0.01" placeholder="0,00" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Vencimento *</label><input id="cVcto" type="date" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Código de barras</label><input id="cCodBar" type="text" placeholder="Opcional" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Observações</label><input id="cObs" type="text" placeholder="Opcional" style="${iStyle}"></div><div><label style="font-size:11px;color:var(--txt3);display:block;margin-bottom:3px">Forma de pagamento</label><select id="cFormaPag" style="${iStyle}"><option value="">Selecione...</option><option value="Boleto">Boleto</option><option value="PIX">PIX</option><option value="Transferência">Transferência</option><option value="Débito automático">Débito automático</option></select></div></div><div style="display:flex;gap:8px"><button onclick="salvarContaLocal()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">Salvar conta</button><button onclick="showContaForm=false;pgContas()" style="font-size:12px;padding:6px 16px;border-radius:7px;border:none;background:var(--bg2);color:var(--txt2);cursor:pointer;font-family:inherit">Cancelar</button></div></div>`:'';
-  const barcodeHtml=showBarcodeInput?`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;background:var(--bg3)"><div style="font-size:11px;color:var(--txt3);margin-bottom:6px">Cole ou digite o código de barras do boleto:</div><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><input id="barcodeInput" type="text" placeholder="Cole ou digite o código de barras..." onkeydown="if(event.key==='Enter'){event.preventDefault();usarCodigoBarras();}" style="flex:1;font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:monospace"><button onclick="openBarcodeCamera()" style="font-size:11px;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;white-space:nowrap">📷 Câmera</button></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="copiarCodigoBarras()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">📋 Copiar</button><button onclick="usarCodigoBarras()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">Usar este código</button><button onclick="showBarcodeInput=false;pgContas()" style="font-size:11px;padding:5px 12px;border-radius:7px;border:none;background:var(--bg2);color:var(--txt2);cursor:pointer;font-family:inherit">Fechar</button></div></div>`:'';
-  const filterBtns=['todos','pendentes','pagos'].map(f=>{const lbl={todos:'Todos',pendentes:'Pendentes',pagos:'Pagos'}[f];const on=f===contasFilter;return`<button onclick="contasFilter='${f}';pgContas()" style="font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid ${on?'var(--r)':'var(--border)'};background:${on?'rgba(224,53,53,.15)':'transparent'};color:${on?'var(--r)':'var(--txt2)'};cursor:pointer;font-family:inherit;font-weight:600">${lbl}</button>`;}).join('');
-  const totalMes=visivel.reduce((s,c)=>s+c.valor,0);
-  const totalPago=visivel.filter(c=>c.status==='pago').reduce((s,c)=>s+c.valor,0);
-  const totalPend=visivel.filter(c=>c.status!=='pago').reduce((s,c)=>s+c.valor,0);
-  mc.innerHTML=`${alertHtml}<div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="showContaForm=!showContaForm;showBarcodeInput=false;pgContas()" style="font-size:12px;padding:6px 14px;border-radius:7px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">+ Nova conta manual</button><button onclick="showBarcodeInput=!showBarcodeInput;showContaForm=false;pgContas()" style="font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">📷 Ler código de barras</button></div><div style="display:flex;gap:6px">${filterBtns}</div></div>${formHtml}${barcodeHtml}</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Total do mês</div><div style="font-size:18px;font-weight:700;color:var(--txt)">${fmtR(totalMes)}</div></div><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Pago</div><div style="font-size:18px;font-weight:700;color:var(--green)">${fmtR(totalPago)}</div></div><div class="card" style="text-align:center"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Pendente</div><div style="font-size:18px;font-weight:700;color:var(--orange)">${fmtR(totalPend)}</div></div></div><div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><button onclick="contasMes=new Date(contasMes.getFullYear(),contasMes.getMonth()-1,1);pgContas()" style="font-size:20px;background:none;border:none;color:var(--txt2);cursor:pointer;padding:4px 10px">‹</button><div style="font-weight:700;font-size:14px;color:var(--txt)">${mesNome} ${ano}</div><button onclick="contasMes=new Date(contasMes.getFullYear(),contasMes.getMonth()+1,1);pgContas()" style="font-size:20px;background:none;border:none;color:var(--txt2);cursor:pointer;padding:4px 10px">›</button><button class="btn-reload-contas" onclick="recarregarContas()" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt3);cursor:pointer;font-family:inherit;margin-left:8px">↻ Atualizar</button></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">${cells}</div><div style="font-size:10px;color:var(--txt3);text-align:center;padding-top:10px;margin-top:8px;border-top:1px solid var(--border)">Toque em ↻ Atualizar para carregar contas salvas por outros dispositivos</div></div><div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Contas — ${mesNome} ${ano}</div><div class="card-sub">${visivel.length} conta${visivel.length!==1?'s':''} · ${fmtR(totalMes)} total</div></div></div><div class="tw"><table><thead><tr><th>Nome</th><th>Categoria</th><th style="text-align:center">Vencimento</th><th style="text-align:right">Valor</th><th style="text-align:center">Status</th><th style="text-align:center">Ações</th></tr></thead><tbody>${tableRows||'<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:20px">Nenhuma conta neste período</td></tr>'}</tbody></table></div></div><div id="contaDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'"></div>`;
-}
-
-function salvarContaLocal(){
-  const nome=(document.getElementById('cNome')?.value||'').trim();
-  const categoria=document.getElementById('cCat')?.value||'';
-  const valorRaw=(document.getElementById('cValor')?.value||'').replace(/[^\d,]/g,'').replace(',','.');
-  const valor=parseFloat(valorRaw)||0;
-  const vencimento=document.getElementById('cVcto')?.value||'';
-  const codigoBarras=(document.getElementById('cCodBar')?.value||'').trim();
-  const observacoes=(document.getElementById('cObs')?.value||'').trim();
-  const formaPagamento=document.getElementById('cFormaPag')?.value||'';
-  if(!nome||!categoria||!valor||!vencimento){alert('Preencha os campos obrigatórios: Nome, Categoria, Valor e Vencimento.');return;}
-  const novaId='CP_'+Date.now();
-  CONTAS.push({id:novaId,nome,categoria,valor,vencimento,codigoBarras,observacoes,formaPagamento,status:'pendente',dataPagamento:'',criadoPor:USUARIO_ATUAL?.email||'',criadoEm:new Date().toISOString(),atualizadoEm:new Date().toISOString()});
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'salvar',id:novaId,nome,categoria,valor,vencimento,codigoBarras,observacoes,formaPagamento,status:'pendente',criadoPor:USUARIO_ATUAL?.email||'',dataPagamento:''}),headers:{'Content-Type':'application/json'}}).then(()=>alert('Conta salva com sucesso!')).catch(()=>alert('Conta salva localmente. Sincronização pendente.'));
-  showContaForm=false;
-  contasMes=new Date(vencimento+'T12:00:00');
-  pgContas();
-}
-
-function marcarContaPaga(id){
-  const c=CONTAS.find(c=>c.id===id);
-  if(!c)return;
-  c.status='pago';
-  c.dataPagamento=ds(new Date());
-  c.atualizadoEm=new Date().toISOString();
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'atualizar',id,status:'Pago',dataPagamento:c.dataPagamento}),headers:{'Content-Type':'application/json'}}).then(()=>alert('Status atualizado!')).catch(()=>{});
-  const modal=document.getElementById('contaDetailModal');
-  if(modal)modal.style.display='none';
-  pgContas();
-}
-
-function excluirConta(id){
-  if(!confirm('Excluir esta conta?'))return;
-  const idx=CONTAS.findIndex(c=>c.id===id);
-  if(idx>=0)CONTAS.splice(idx,1);
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'excluir',id}),headers:{'Content-Type':'application/json'}}).then(()=>alert('Conta excluída!')).catch(()=>{});
-  pgContas();
-}
-
-function editarConta(id){
-  const c=CONTAS.find(x=>x.id===id);
-  if(!c)return;
-  const overlay=document.getElementById('contaDetailModal');
-  if(!overlay)return;
-  const categorias={'Custos Adm':['Mat. Escritório','Manutenção','Benfeitorias','Beneditta'],'Custos Operacionais':['Água','Aluguel','Contador','Detetização','Segurança','Energia','Gás','Extras','Jurídico','Software','Internet','Seguro','Taxas Cartão','Alug. Máq.'],'Funcionários':['Salário','Transporte','Comissão','Uber','Férias','Extras','13°','Folguista','Pró-Labore','Vale'],'Embalagem':['Caixas de Pizza','Papéis','Lacre'],'Impostos':['DAS - Simples','Diversos','DARF','FGTS'],'Marketing':['Tráfego Pago','Agência de Marketing','iFood Ads'],'Insumos':['Insumos','Bebidas'],'Logística':['Motoboys'],'Empréstimos':['Extras','Saídas Caixa Econômica','Caixa Econ.']};
-  const cats=Object.entries(categorias).map(([grp,items])=>items.map(it=>`<option value='${grp} · ${it}' ${c.categoria===grp+' · '+it?'selected':''}>${grp} · ${it}</option>`).join('')).join('');
-  const iStyle='width:100%;font-size:13px;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt);font-family:inherit;box-sizing:border-box;margin-top:4px';
-  overlay.style.display='flex';
-  overlay.innerHTML=`<div style='background:var(--bg);border-radius:16px;padding:24px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto' onclick='event.stopPropagation()'><div style='font-size:16px;font-weight:700;color:var(--txt);margin-bottom:16px'>✏️ Editar conta</div><div style='display:grid;gap:12px'><div><label style='font-size:11px;color:var(--txt3)'>Nome *</label><input id='eCNome' value="${c.nome.replace(/"/g,'&quot;')}" style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Categoria *</label><select id='eCCat' style='${iStyle}'><option value=''>Selecione...</option>${cats}</select></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'><div><label style='font-size:11px;color:var(--txt3)'>Valor *</label><input id='eCValor' type='number' step='0.01' value='${c.valor}' style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Vencimento *</label><input id='eCVcto' type='date' value='${c.vencimento}' style='${iStyle}'></div></div><div><label style='font-size:11px;color:var(--txt3)'>Código de barras</label><input id='eCCodBar' value="${(c.codigoBarras||'').replace(/"/g,'&quot;')}" style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Observações</label><input id='eCObs' value="${(c.observacoes||'').replace(/"/g,'&quot;')}" style='${iStyle}'></div><div><label style='font-size:11px;color:var(--txt3)'>Forma de pagamento</label><select id='eCFormaPag' style='${iStyle}'><option value=''>Selecione...</option><option value='Boleto' ${c.formaPagamento==='Boleto'?'selected':''}>Boleto</option><option value='PIX' ${c.formaPagamento==='PIX'?'selected':''}>PIX</option><option value='Transferência' ${c.formaPagamento==='Transferência'?'selected':''}>Transferência</option><option value='Débito automático' ${c.formaPagamento==='Débito automático'?'selected':''}>Débito automático</option></select></div></div><div style='display:flex;gap:8px;margin-top:16px'><button onclick='salvarEdicaoConta("${id}")' style='flex:1;padding:10px;border-radius:8px;border:none;background:var(--r);color:#fff;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px'>Salvar</button><button onclick='document.getElementById("contaDetailModal").style.display="none"' style='flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:13px'>Cancelar</button></div></div>`;
-}
-
-function salvarEdicaoConta(id){
-  const c=CONTAS.find(x=>x.id===id);
-  if(!c)return;
-  const nome=document.getElementById('eCNome')?.value?.trim();
-  const categoria=document.getElementById('eCCat')?.value;
-  const valor=parseFloat(document.getElementById('eCValor')?.value||0);
-  const vencimento=document.getElementById('eCVcto')?.value;
-  const codigoBarras=document.getElementById('eCCodBar')?.value||'';
-  const observacoes=document.getElementById('eCObs')?.value||'';
-  const formaPagamento=document.getElementById('eCFormaPag')?.value||'';
-  if(!nome||!categoria||!valor||!vencimento){alert('Preencha os campos obrigatórios.');return;}
-  c.nome=nome;c.categoria=categoria;c.valor=valor;c.vencimento=vencimento;c.codigoBarras=codigoBarras;c.observacoes=observacoes;c.formaPagamento=formaPagamento;c.atualizadoEm=new Date().toISOString();
-  fetch(CONTAS_URL,{method:'POST',mode:'no-cors',redirect:'follow',body:JSON.stringify({action:'atualizar',id,nome,categoria,valor,vencimento,codigoBarras,observacoes,formaPagamento}),headers:{'Content-Type':'application/json'}}).then(()=>{}).catch(()=>{});
-  document.getElementById('contaDetailModal').style.display='none';
-  pgContas();
-  alert('Conta atualizada!');
-}
-
-function showContaDetail(id,nome,categoria,valor,vencimento,codigoBarras,observacoes,status,formaPagamento){
-  const modal=document.getElementById('contaDetailModal');
-  if(!modal)return;
-  const hoje=ds(new Date());
-  const isPago=status==='pago';
-  const isAtrasado=!isPago&&vencimento&&vencimento<hoje;
-  const sc=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
-  const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
-  const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
-  const vctoFmt=vencimento?vencimento.split('-').reverse().join('/'):'–';
-  const cbHtml=codigoBarras?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Código de barras</div><div style="display:flex;gap:6px;align-items:flex-start"><code style="font-size:10px;background:var(--bg3);padding:5px 8px;border-radius:6px;border:1px solid var(--border);word-break:break-all;flex:1;color:var(--txt)">${codigoBarras}</code><button onclick="navigator.clipboard.writeText(this.dataset.v).then(()=>alert('Copiado!'))" data-v="${codigoBarras}" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;white-space:nowrap">📋</button></div></div>`:'';
-  const obsHtml=observacoes?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--txt3);margin-bottom:2px">Observações</div><div style="font-size:12px;color:var(--txt2)">${observacoes}</div></div>`:'';
-  modal.innerHTML=`<div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:420px;width:90%;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px"><div><div style="font-size:16px;font-weight:700;color:var(--txt)">${nome}</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">${categoria}</div></div><button onclick="document.getElementById('contaDetailModal').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div style="background:var(--bg3);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--txt3)">Valor</div><div style="font-size:16px;font-weight:700;color:var(--green)">${fmtR(valor)}</div></div><div style="background:var(--bg3);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--txt3)">Vencimento</div><div style="font-size:16px;font-weight:700;color:var(--txt)">${vctoFmt}</div></div></div><div style="margin-bottom:12px"><span style="background:${sb};color:${sc};border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">${sl}</span>${formaPagamento?`<div style="margin-top:6px;font-size:12px;color:var(--txt2)">💳 ${formaPagamento}</div>`:''}</div>${cbHtml}${obsHtml}<div style="display:flex;gap:8px;margin-top:6px">${!isPago?`<button onclick="marcarContaPaga('${id}')" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">✓ Marcar como pago</button>`:`<button onclick="document.getElementById('contaDetailModal').style.display='none'" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:none;background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit">Fechar</button>`}</div>${codigoBarras?`<button onclick='navigator.clipboard.writeText("${codigoBarras}").then(()=>alert("Código copiado!"))' style='width:100%;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:13px;margin-top:6px'>📋 Copiar código de barras</button>`:''}</div>`;
-  modal.style.display='flex';
-}
-
-async function recarregarContas(){
-  const mc=document.getElementById('mc');
-  const btn=mc?.querySelector('.btn-reload-contas');
-  if(btn){btn.textContent='⏳';btn.disabled=true;}
-  try{
-    const parseDate=v=>{if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}return typeof v==='string'?v.substring(0,10):'';};
-    const urlCP=BASE+encodeURIComponent('ContasPagar')+'&cachebust='+Date.now();
-    const respCP=await fetch(urlCP);
-    const txtCP=await respCP.text();
-    const jsonCP=JSON.parse(txtCP.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-    const fetched=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||'cp_'+i),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',formaPagamento:r.c[12]?.v||''};}).filter(d=>d.nome);
-    CONTAS=fetched;
-  }catch(e){
-    console.error('recarregarContas err:',e);
-  }finally{
-    _contasLoading=false;
-    pgContas();
-  }
-}
-
-function abrirDetalhesConta(id){
-  const c=CONTAS.find(x=>x.id===id);
-  if(!c)return;
-  showContaDetail(c.id,c.nome,c.categoria,c.valor,c.vencimento,c.codigoBarras,c.observacoes,c.status,c.formaPagamento);
-}
-
-function showDayDetail(dateStr){
-  const modal=document.getElementById('contaDetailModal');
-  if(!modal)return;
-  const hjStr=ds(new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()));
-  const contas=CONTAS.filter(c=>c.vencimento===dateStr);
-  const [y,m,d]=dateStr.split('-');
-  const dtFmt=`${d}/${m}/${y}`;
-  const diaSemana=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'][new Date(dateStr+'T12:00:00').getDay()];
-  const rows=contas.map(c=>{
-    const isPago=c.status==='pago';
-    const isAtrasado=!isPago&&c.vencimento<hjStr;
-    const sc=isPago?'var(--green)':isAtrasado?'var(--r)':'var(--orange)';
-    const sb=isPago?'rgba(34,197,94,.15)':isAtrasado?'rgba(239,68,68,.15)':'rgba(251,146,60,.15)';
-    const sl=isPago?'Pago':isAtrasado?'Atrasado':'Pendente';
-    const cbHtml=c.codigoBarras?`<div style="display:flex;gap:6px;align-items:flex-start;margin-top:4px"><code style="font-size:9px;background:var(--bg3);padding:3px 6px;border-radius:5px;border:1px solid var(--border);word-break:break-all;flex:1;color:var(--txt)">${c.codigoBarras}</code><button onclick="navigator.clipboard.writeText(this.dataset.v).then(()=>alert('Copiado!'))" data-v="${c.codigoBarras}" style="font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;white-space:nowrap">📋</button></div>`:'';
-    const obsHtml=c.observacoes?`<div style="font-size:10px;color:var(--txt3);margin-top:4px">${c.observacoes}</div>`:'';
-    const pagarBtn=!isPago?`<button onclick="marcarContaPaga('${c.id.replace(/'/g,"\\'")}');document.getElementById('contaDetailModal').style.display='none'" style="margin-top:8px;font-size:11px;padding:4px 12px;border-radius:20px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;font-weight:600">✓ Marcar pago</button>`:'';
-    return`<div style="border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px"><div><div style="font-size:13px;font-weight:700;color:var(--txt)">${c.nome}</div><div style="font-size:10px;color:var(--txt3)">${c.categoria}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700;color:var(--green)">${fmtR(c.valor)}</div><span style="background:${sb};color:${sc};border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600">${sl}</span></div></div>${cbHtml}${obsHtml}${pagarBtn}</div>`;
-  }).join('');
-  modal.innerHTML=`<div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:480px;width:90%;border:1px solid var(--border);max-height:85vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:15px;font-weight:700;color:var(--txt)">${dtFmt}</div><div style="font-size:11px;color:var(--txt3)">${diaSemana}</div></div><button onclick="document.getElementById('contaDetailModal').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px;line-height:1">✕</button></div>${rows||'<div style="text-align:center;color:var(--txt3);padding:20px">Nenhuma conta neste dia</div>'}</div>`;
-  modal.style.display='flex';
-}
-
-function openBarcodeCamera(){
-  if(document.getElementById('barcodeCameraOverlay'))return;
-  const overlay=document.createElement('div');
-  overlay.id='barcodeCameraOverlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;box-sizing:border-box';
-  overlay.innerHTML=`<div style='color:#fff;font-size:14px;font-weight:600;text-align:center'>📷 Ler código de barras</div><div id='quaggaViewport' style='width:100%;max-width:420px;position:relative;border-radius:10px;overflow:hidden;background:#000'></div><div id='barcodeStatus' style='color:rgba(255,255,255,.7);font-size:12px;text-align:center;max-width:320px'>Iniciando câmera...</div><button onclick='closeBarcodeCamera()' style='font-size:12px;padding:8px 24px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-family:inherit'>Fechar</button>`;
-  document.body.appendChild(overlay);
-  window._lastBarcode='';
-  Quagga.init({
-    inputStream:{type:'LiveStream',target:document.getElementById('quaggaViewport'),constraints:{facingMode:'environment',width:{ideal:640},height:{ideal:480}}},
-    decoder:{readers:[{format:'i2of5_reader',config:{supplements:[]}},  'code_128_reader','ean_reader'],multiple:false},
-    patchSize:'medium',halfSample:false,
-    locate:true,numOfWorkers:2,frequency:10
-  },function(err){
-    if(err){const st=document.getElementById('barcodeStatus');if(st)st.textContent='Erro ao iniciar câmera: '+err.message;return;}
-    Quagga.start();
-    const qv=document.getElementById('quaggaViewport');
-    if(qv){
-      const vid=qv.querySelector('video');
-      const canvas=qv.querySelectorAll('canvas');
-      if(vid){vid.style.cssText='width:100%!important;height:auto!important;transform:none!important;position:relative!important;';}
-      canvas.forEach(c=>{c.style.cssText='position:absolute;top:0;left:0;width:100%!important;height:100%!important;';});
-    }
-    const st=document.getElementById('barcodeStatus');if(st)st.textContent='Escaneando... aponte para o código de barras';
-  });
-  Quagga.onDetected(function(result){
-    const code=result.codeResult.code;
-    if(!code)return;
-    const digits=code.replace(/\D/g,'');
-    if(digits.length<30)return;
-    if(window._lastBarcode!==digits){window._lastBarcode=digits;return;}
-    window._lastBarcode='';
-    console.log('Detected:',code,'format:',result.codeResult.format,'confidence:',result.codeResult.decodedCodes?.map(d=>d.error));
-    const detectedCode=code;
-    closeBarcodeCamera();
-    showBarcodeInput=true;
-    pgContas();
-    setTimeout(()=>{
-      const inp=document.getElementById('barcodeInput');
-      if(inp){
-        inp.value=detectedCode;
-        inp.dispatchEvent(new Event('input'));
-      }
-      const bi=document.getElementById('barcodeInput');if(bi&&!bi.value)bi.focus();
-    },150);
-  });
-}
-
-function closeBarcodeCamera(){
-  try{Quagga.offDetected();Quagga.stop();}catch(e){}
-  if(window._barcodeCameraStream){window._barcodeCameraStream.getTracks().forEach(t=>t.stop());window._barcodeCameraStream=null;}
-  const el=document.getElementById('barcodeCameraOverlay');
-  if(el)el.remove();
-}
-
-function copiarCodigoBarras(){
-  const v=document.getElementById('barcodeInput')?.value;
-  if(v)navigator.clipboard.writeText(v).then(()=>alert('Código copiado!')).catch(()=>{});
-}
-
-function usarCodigoBarras(){
-  const v=document.getElementById('barcodeInput')?.value||'';
-  const digits=v.replace(/\D/g,'');
-  let valor=null,vencimento=null;
-  if(digits.length===44){
-    valor=parseFloat(digits.substring(9,19))/100;
-    const fator=parseInt(digits.substring(5,9));
-    if(fator>1000){const base=new Date(1997,9,7);base.setDate(base.getDate()+(fator-1000));vencimento=base.toISOString().substring(0,10);}
-  }else if(digits.length===47||digits.length===48){
-    const v2=parseFloat(digits.substring(12,17))/100;
-    const v1=parseFloat(digits.substring(37,47))/100;
-    if(v2>0.5&&v2<50000)valor=v2;
-    else if(v1>0.5&&v1<50000)valor=v1;
-  }else if(digits.length>=36&&digits.length<=43){
-    if(digits.length===42){
-      const v3=parseFloat(digits.substring(4,13))/100;
-      const v4=parseFloat(digits.substring(19,29))/100;
-      if(v3>1&&v3<50000)valor=v3;
-      else if(v4>1&&v4<50000)valor=v4;
-    }else{
-      const v1=parseFloat(digits.substring(4,15))/100;
-      const v2=parseFloat(digits.substring(5,14))/100;
-      if(v1>1&&v1<50000)valor=v1;
-      else if(v2>1&&v2<50000)valor=v2;
-    }
-  }
-  showBarcodeInput=false;
-  showContaForm=true;
-  pgContas();
-  setTimeout(()=>{
-    const cb=document.getElementById('cCodBar');if(cb&&v)cb.value=v;
-    if(valor&&valor>0){const vEl=document.getElementById('cValor');if(vEl)vEl.value=valor.toFixed(2);}
-    if(vencimento){const dEl=document.getElementById('cVcto');if(dEl)dEl.value=vencimento;}
-  },100);
 }
 
 // ================================================================
@@ -3020,16 +2664,12 @@ function getRow_DRE(label) {
 }
 
 // ================================================================
-// PAUTA DO DIA
-
+// Restos da antiga PAUTA DO DIA — mantidos porque a tela de Usuários usa
+// _pautaTarefas para montar a lista de "Área" do formulário.
 const CHECKLIST_SID = '16NXBtteKUq5gq5lF7d-0D_T4w6lA2LHWlxuxO8EMcEA';
 const CHECKLIST_BASE = `https://docs.google.com/spreadsheets/d/${CHECKLIST_SID}/gviz/tq?tqx=out:json&sheet=`;
 
 let _pautaTarefas = [];      // tarefas carregadas da planilha
-let _pautaChecks = [];       // checks do dia (salvo no Apps Script)
-let _pautaHistorico = [];    // histórico dos últimos dias
-let _pautaAreaAtiva = '';    // área sendo visualizada (gestor)
-let _pautaCarregando = false;
 
 // ── Carregar tarefas da aba TAREFAS ─────────────────────────────
 async function carregarTarefasPauta() {
@@ -3057,467 +2697,142 @@ async function carregarTarefasPauta() {
     return [];
   }
 }
-
-// ── Carregar checks do dia do Apps Script ───────────────────────
-async function carregarChecksPauta(dataStr) {
-  try {
-    const url = APPS_URL + '?action=listarChecks&data=' + dataStr + '&cachebust=' + Date.now();
-    const resp = await fetch(url);
-    const json = await resp.json();
-    if (json.checks) _pautaChecks = json.checks;
-    else _pautaChecks = [];
-  } catch(e) {
-    // Se Apps Script ainda não tem a action, usa array vazio
-    _pautaChecks = [];
-  }
-}
-
-// ── Carregar histórico (últimos 7 dias) ─────────────────────────
-async function carregarHistoricoPauta() {
-  try {
-    const url = APPS_URL + '?action=historicoChecks&dias=7&cachebust=' + Date.now();
-    const resp = await fetch(url);
-    const json = await resp.json();
-    if (json.historico) _pautaHistorico = json.historico;
-    else _pautaHistorico = [];
-  } catch(e) {
-    _pautaHistorico = [];
-  }
-}
-
-// ── Salvar check via Apps Script ────────────────────────────────
-async function salvarCheck(tarefaId, tarefa, area, turno, foto64) {
-  const hoje = ds(new Date());
-  const agora = p2(new Date().getHours()) + ':' + p2(new Date().getMinutes());
-  const usuario = USUARIO_ATUAL?.nome || 'Desconhecido';
-  const check = {
-    tarefaId, tarefa, area, turno,
-    usuario, data: hoje, hora: agora,
-    foto: foto64 || '',
-  };
-  // Salva local imediatamente para UX rápida
-  _pautaChecks = _pautaChecks.filter(c => !(c.tarefaId === tarefaId && c.data === hoje));
-  _pautaChecks.push(check);
-
-  // Sincroniza com Apps Script
-  try {
-    fetch(APPS_URL, {
-      method: 'POST', mode: 'no-cors', redirect: 'follow',
-      body: JSON.stringify({ action: 'salvarCheck', ...check }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch(e) {}
-  return check;
-}
-
-// ── Desfazer check ───────────────────────────────────────────────
-async function desfazerCheck(tarefaId) {
-  const hoje = ds(new Date());
-  _pautaChecks = _pautaChecks.filter(c => !(c.tarefaId === tarefaId && c.data === hoje));
-  try {
-    fetch(APPS_URL, {
-      method: 'POST', mode: 'no-cors', redirect: 'follow',
-      body: JSON.stringify({ action: 'desfazerCheck', tarefaId, data: hoje }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch(e) {}
-}
-
-// ── Página principal da Pauta ────────────────────────────────────
-async function pgPauta() {
-  const mc = document.getElementById('mc');
-  if (!mc) return;
-
-  const isGestor = USUARIO_ATUAL?.nivel === 'GESTOR' || USUARIO_ATUAL?.admin;
-  const areaUsuario = USUARIO_ATUAL?.area || '';
-  const hoje = ds(new Date());
-
-  mc.innerHTML = '<div class="loading"><div class="spin"></div>Carregando pauta do dia...</div>';
-
-  // Carrega tarefas e checks em paralelo
-  await Promise.all([carregarTarefasPauta(), carregarChecksPauta(hoje)]);
-
-  if (!_pautaTarefas.length) {
-    mc.innerHTML = '<div class="loading" style="color:var(--txt3)">Nenhuma tarefa encontrada na planilha de Checklists.</div>';
-    return;
-  }
-
-  // Todas as áreas disponíveis
-  const areas = [...new Set(_pautaTarefas.map(t => t.area).filter(Boolean))].sort();
-
-  if (isGestor) {
-    // Gestor vê painel completo com todas as áreas
-    if (!_pautaAreaAtiva) _pautaAreaAtiva = areas[0] || '';
-    renderPautaGestor(mc, areas, hoje);
-  } else {
-    // Funcionário vê só sua área
-    const areaFinal = areaUsuario || areas[0] || '';
-    renderPautaFuncionario(mc, areaFinal, hoje);
-  }
-}
-
-// ── Render: visão do FUNCIONÁRIO ─────────────────────────────────
-function renderPautaFuncionario(mc, area, hoje) {
-  const tarefasArea = _pautaTarefas.filter(t => t.area === area);
-  const abertura = tarefasArea.filter(t => t.checklist === 'Abertura' || t.periodo?.toLowerCase().includes('início'));
-  const fechamento = tarefasArea.filter(t => t.checklist === 'Fechamento' || t.periodo?.toLowerCase().includes('final'));
-  const outras = tarefasArea.filter(t => !abertura.includes(t) && !fechamento.includes(t));
-
-  const checksDia = _pautaChecks.filter(c => c.data === hoje);
-  const feitas = checksDia.length;
-  const total = tarefasArea.length;
-  const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
-  const pendentes = tarefasArea.filter(t => !checksDia.find(c => c.tarefaId === t.id));
-
-  const horaAtual = new Date().getHours();
-  const isFechamento = horaAtual >= 21;
-
-  const progHtml = `
-    <div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div>
-          <div style="font-size:13px;font-weight:700">${area}</div>
-          <div style="font-size:10px;color:var(--txt3)">${hoje.split('-').reverse().join('/')} · ${feitas} de ${total} concluídas</div>
-        </div>
-        <div style="font-size:24px;font-weight:800;color:${pct===100?'var(--green)':pct>50?'var(--orange)':'var(--r)'}">${pct}%</div>
-      </div>
-      <div class="pauta-prog-wrap"><div class="pauta-prog-fill" style="width:${pct}%"></div></div>
-      ${pct < 100 ? `<div style="font-size:10px;color:var(--txt3);margin-top:6px">⏳ ${pendentes.length} tarefa${pendentes.length !== 1 ? 's' : ''} pendente${pendentes.length !== 1 ? 's' : ''}</div>` : '<div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:600">✅ Todas as tarefas concluídas!</div>'}
-    </div>`;
-
-  const renderTurno = (lista, turno, badge) => {
-    if (!lista.length) return '';
-    const rows = lista.map(t => renderItemFuncionario(t, hoje)).join('');
-    return `
-      <div class="pauta-turno-hdr">
-        <span class="pauta-turno-badge ${turno === 'Abertura' ? 'turno-ab' : 'turno-fe'}">${badge} ${turno}</span>
-        <span style="font-size:10px;color:var(--txt3)">${lista.filter(t => _pautaChecks.find(c => c.tarefaId === t.id && c.data === hoje)).length}/${lista.length}</span>
-      </div>
-      ${rows}`;
-  };
-
-  mc.innerHTML = progHtml +
-    renderTurno(abertura, 'Abertura', '🌅') +
-    renderTurno(fechamento, 'Fechamento', '🌙') +
-    (outras.length ? renderTurno(outras, 'Durante o dia', '☀️') : '') +
-    `<div style="margin-top:20px;font-size:10px;color:var(--txt3);text-align:center">Toque em uma tarefa para marcar como concluída</div>`;
-}
-
-function renderItemFuncionario(t, hoje) {
-  const check = _pautaChecks.find(c => c.tarefaId === t.id && c.data === hoje);
-  const feito = !!check;
-  return `
-    <div class="pauta-item ${feito ? 'feito' : ''}" onclick="toggleCheck('${t.id}')" id="pitem_${t.id}">
-      <div class="pauta-check">${feito ? '✓' : ''}</div>
-      <div class="pauta-info">
-        <div class="pauta-nome">${t.tarefa}</div>
-        ${feito ? `<div class="pauta-meta"><span class="pauta-quem">✓ ${check.usuario}</span><span style="color:var(--txt3)">${check.hora}</span></div>` : `<div class="pauta-meta"><span style="color:var(--txt3)">${t.periodo || ''}</span></div>`}
-      </div>
-      ${t.temFoto && !feito ? `<button class="pauta-foto-btn" onclick="event.stopPropagation();abrirFotoCheck('${t.id}')">📷</button>` : ''}
-      ${feito && check.foto ? `<img class="pauta-foto-thumb" src="${check.foto}" onclick="event.stopPropagation();verFoto('${check.foto}')" title="Ver foto">` : ''}
-    </div>`;
-}
-
-// ── Render: visão do GESTOR ──────────────────────────────────────
-function renderPautaGestor(mc, areas, hoje) {
-  const checksDia = _pautaChecks.filter(c => c.data === hoje);
-
-  // Cards de resumo por área
-  const resumoCards = areas.map(area => {
-    const tarefasArea = _pautaTarefas.filter(t => t.area === area);
-    const feitas = tarefasArea.filter(t => checksDia.find(c => c.tarefaId === t.id)).length;
-    const total = tarefasArea.length;
-    const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
-    const cor = pct === 100 ? 'var(--green)' : pct > 60 ? 'var(--orange)' : 'var(--r)';
-    return `
-      <div class="pauta-stat" style="cursor:pointer;border-color:${_pautaAreaAtiva===area?cor:'var(--border)'};background:${_pautaAreaAtiva===area?'var(--bg3)':'var(--bg2)'}" onclick="selecionarAreaGestor('${area}')">
-        <div class="pauta-stat-val" style="color:${cor}">${pct}%</div>
-        <div style="font-size:11px;font-weight:600;color:var(--txt);margin-top:2px">${area}</div>
-        <div class="pauta-stat-lbl">${feitas}/${total} feitas</div>
-      </div>`;
-  }).join('');
-
-  // Pendentes globais (destaque)
-  const pendentesTodas = _pautaTarefas.filter(t => !checksDia.find(c => c.tarefaId === t.id));
-  const pendsHtml = pendentesTodas.length === 0
-    ? '<div style="color:var(--green);font-size:12px;font-weight:600;padding:12px 0">✅ Todas as tarefas do dia foram concluídas!</div>'
-    : pendentesTodas.slice(0, 10).map(t => `
-        <div class="pauta-pend-item">
-          <div class="pauta-pend-dot"></div>
-          <div style="flex:1"><span style="font-weight:600;color:var(--txt)">${t.tarefa}</span></div>
-          <span style="color:var(--txt3);font-size:10px;white-space:nowrap">${t.area} · ${t.checklist||t.periodo||''}</span>
-        </div>`).join('') + (pendentesTodas.length > 10 ? `<div style="font-size:10px;color:var(--txt3);padding:6px 0">+${pendentesTodas.length - 10} tarefas pendentes...</div>` : '');
-
-  // Área selecionada em detalhe
-  const areaDetalhe = _pautaAreaAtiva ? renderDetalheAreaGestor(_pautaAreaAtiva, hoje) : '';
-
-  // Checks recentes (últimos 10)
-  const recentes = [...checksDia].sort((a, b) => b.hora.localeCompare(a.hora)).slice(0, 8);
-  const recentesHtml = recentes.length
-    ? recentes.map(c => `
-        <div class="pauta-hist-row">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px"></div>
-          <div style="flex:1"><span style="font-weight:600;color:var(--txt)">${c.tarefa}</span><div style="color:var(--txt3)">${c.area}</div></div>
-          <div style="text-align:right;flex-shrink:0"><div style="color:var(--green);font-weight:600">${c.usuario}</div><div style="color:var(--txt3)">${c.hora}</div></div>
-        </div>`).join('')
-    : '<div style="color:var(--txt3);font-size:12px;padding:12px 0;text-align:center">Nenhuma tarefa concluída ainda hoje.</div>';
-
-  mc.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div>
-        <div style="font-size:13px;font-weight:700">Pauta do Dia — ${hoje.split('-').reverse().join('/')}</div>
-        <div style="font-size:10px;color:var(--txt3)">${checksDia.length} de ${_pautaTarefas.length} tarefas concluídas hoje</div>
-      </div>
-      <button onclick="recarregarPauta()" style="font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt3);cursor:pointer;font-family:inherit">↻ Atualizar</button>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:16px">
-      ${resumoCards}
-    </div>
-
-    <div class="g2" style="margin-bottom:14px">
-      <div class="card">
-        <div class="card-hdr"><div><div class="card-ttl">🔴 Pendentes hoje</div><div class="card-sub">${pendentesTodas.length} tarefa${pendentesTodas.length!==1?'s':''} ainda não concluídas</div></div></div>
-        ${pendsHtml}
-      </div>
-      <div class="card">
-        <div class="card-hdr"><div class="card-ttl">✅ Concluídas recentemente</div></div>
-        ${recentesHtml}
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-hdr" style="margin-bottom:12px">
-        <div><div class="card-ttl">📋 Detalhe por área</div><div class="card-sub">Selecione uma área acima para ver as tarefas</div></div>
-      </div>
-      <div class="pauta-area-tab">
-        ${areas.map(a => `<button class="pauta-tab ${_pautaAreaAtiva===a?'active':''}" onclick="selecionarAreaGestor('${a}')">${a}</button>`).join('')}
-      </div>
-      <div id="pautaDetalheArea">${areaDetalhe}</div>
-    </div>`;
-}
-
-function renderDetalheAreaGestor(area, hoje) {
-  const tarefasArea = _pautaTarefas.filter(t => t.area === area);
-  const checksDia = _pautaChecks.filter(c => c.data === hoje);
-  const abertura = tarefasArea.filter(t => t.checklist === 'Abertura' || t.periodo?.toLowerCase().includes('início'));
-  const fechamento = tarefasArea.filter(t => t.checklist === 'Fechamento' || t.periodo?.toLowerCase().includes('final'));
-  const outras = tarefasArea.filter(t => !abertura.includes(t) && !fechamento.includes(t));
-
-  const renderGrupo = (lista, turno, badge) => {
-    if (!lista.length) return '';
-    const rows = lista.map(t => {
-      const check = checksDia.find(c => c.tarefaId === t.id);
-      const feito = !!check;
-      return `
-        <div class="pauta-item ${feito ? 'feito' : 'pendente-atrasado'}" onclick="toggleCheckGestor('${t.id}')" id="pitem_${t.id}" style="cursor:pointer">
-          <div class="pauta-check">${feito ? '✓' : '!'}</div>
-          <div class="pauta-info">
-            <div class="pauta-nome">${t.tarefa}</div>
-            ${feito
-              ? `<div class="pauta-meta"><span class="pauta-quem">✓ ${check.usuario}</span><span style="color:var(--txt3)">${check.hora}</span></div>`
-              : `<div class="pauta-meta"><span style="color:var(--r);font-weight:600">Pendente</span><span style="color:var(--txt3)">${t.periodo||''}</span></div>`}
-          </div>
-          ${feito && check.foto ? `<img class="pauta-foto-thumb" src="${check.foto}" onclick="verFoto('${check.foto}')" title="Ver foto">` : ''}
-        </div>`;
-    }).join('');
-    return `<div class="pauta-turno-hdr"><span class="pauta-turno-badge ${turno==='Abertura'?'turno-ab':'turno-fe'}">${badge} ${turno}</span><span style="font-size:10px;color:var(--txt3)">${lista.filter(t=>checksDia.find(c=>c.tarefaId===t.id)).length}/${lista.length}</span></div>${rows}`;
-  };
-
-  return renderGrupo(abertura, 'Abertura', '🌅') +
-    renderGrupo(fechamento, 'Fechamento', '🌙') +
-    (outras.length ? renderGrupo(outras, 'Durante o dia', '☀️') : '');
-}
-
-function selecionarAreaGestor(area) {
-  _pautaAreaAtiva = area;
-  const hoje = ds(new Date());
-  // Atualiza tabs
-  document.querySelectorAll('.pauta-tab').forEach(b => {
-    b.classList.toggle('active', b.textContent === area);
-  });
-  // Atualiza cards de resumo
-  document.querySelectorAll('.pauta-stat').forEach(el => {
-    const isAtivo = el.querySelector('.pauta-stat-val')?.nextElementSibling?.textContent === area;
-  });
-  const el = document.getElementById('pautaDetalheArea');
-  if (el) el.innerHTML = renderDetalheAreaGestor(area, hoje);
-  // Re-renderiza cards de seleção
-  pgPauta();
-}
-
-// ── Toggle check (funcionário) ───────────────────────────────────
-async function toggleCheck(tarefaId) {
-  const hoje = ds(new Date());
-  const check = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
-  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
-  if (!tarefa) return;
-
-  // Verifica se há foto obrigatória
-  if (!check && tarefa.temFoto) {
-    abrirFotoCheck(tarefaId);
-    return;
-  }
-
-  if (check) {
-    // Desfaz
-    await desfazerCheck(tarefaId);
-  } else {
-    // Faz check
-    await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, '');
-  }
-
-  // Atualiza item na tela sem re-renderizar tudo
-  const el = document.getElementById('pitem_' + tarefaId);
-  if (el) {
-    const novoCheck = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
-    const feito = !!novoCheck;
-    el.className = `pauta-item ${feito ? 'feito' : ''}`;
-    el.querySelector('.pauta-check').textContent = feito ? '✓' : '';
-    const info = el.querySelector('.pauta-info');
-    if (info) {
-      info.querySelector('.pauta-nome').textContent = tarefa.tarefa;
-      const meta = info.querySelector('.pauta-meta');
-      if (meta) meta.innerHTML = feito
-        ? `<span class="pauta-quem">✓ ${novoCheck.usuario}</span><span style="color:var(--txt3)">${novoCheck.hora}</span>`
-        : `<span style="color:var(--txt3)">${tarefa.periodo || ''}</span>`;
-    }
-    // Atualiza barra de progresso
-    atualizarProgresso();
-  }
-}
-
-function atualizarProgresso() {
-  const hoje = ds(new Date());
-  const isGestor = USUARIO_ATUAL?.nivel === 'GESTOR' || USUARIO_ATUAL?.admin;
-  const area = USUARIO_ATUAL?.area || '';
-  const tarefasArea = isGestor ? _pautaTarefas : _pautaTarefas.filter(t => t.area === area);
-  const feitas = _pautaChecks.filter(c => c.data === hoje && tarefasArea.find(t => t.id === c.tarefaId)).length;
-  const total = tarefasArea.length;
-  const pct = total > 0 ? Math.round(feitas / total * 100) : 0;
-  const fill = document.querySelector('.pauta-prog-fill');
-  if (fill) fill.style.width = pct + '%';
-  const pctEl = document.querySelector('.pauta-stat-val, [data-pct-label]');
-}
-
-// ── Foto no check ────────────────────────────────────────────────
-function abrirFotoCheck(tarefaId) {
-  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
-  if (!tarefa) return;
-  const overlay = document.getElementById('contaDetailModal') || criarOverlay();
-  overlay.style.display = 'flex';
-  overlay.innerHTML = `
-    <div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:420px;width:90%;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div style="font-size:14px;font-weight:700">📷 Foto de checagem</div>
-        <button onclick="document.getElementById('contaDetailModal').style.display='none'" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:18px">✕</button>
-      </div>
-      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">${tarefa.tarefa}</div>
-      <input type="file" id="fotoInput_${tarefaId}" accept="image/*" capture="environment" onchange="processarFotoCheck('${tarefaId}', this)" style="display:none">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="document.getElementById('fotoInput_${tarefaId}').click()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">📷 Tirar foto</button>
-        <button onclick="confirmarCheckSemFoto('${tarefaId}')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt2);cursor:pointer;font-family:inherit;font-size:13px">Sem foto</button>
-      </div>
-      <div id="fotoPreview_${tarefaId}" style="margin-top:12px"></div>
-    </div>`;
-}
-
-function criarOverlay() {
-  const ov = document.createElement('div');
-  ov.id = 'contaDetailModal';
-  ov.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center';
-  ov.onclick = e => { if (e.target === ov) ov.style.display = 'none'; };
-  document.body.appendChild(ov);
-  return ov;
-}
-
-function processarFotoCheck(tarefaId, input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    const base64 = e.target.result;
-    const preview = document.getElementById('fotoPreview_' + tarefaId);
-    if (preview) preview.innerHTML = `<img src="${base64}" style="width:100%;border-radius:8px;margin-bottom:10px"><button onclick="confirmarCheckComFoto('${tarefaId}','${base64.substring(0, 20)}...')" data-foto="${base64}" style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green);color:#fff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">✓ Confirmar check com foto</button>`;
-    // Guarda base64 no botão
-    const btn = preview?.querySelector('button');
-    if (btn) btn.onclick = () => confirmarCheckComFoto(tarefaId, base64);
-  };
-  reader.readAsDataURL(file);
-}
-
-async function confirmarCheckComFoto(tarefaId, foto64) {
-  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
-  if (!tarefa) return;
-  // Comprime foto (máx 400px, qualidade 0.6)
-  let fotoFinal = foto64;
-  try {
-    const img = new Image();
-    img.src = foto64;
-    await new Promise(r => img.onload = r);
-    const canvas = document.createElement('canvas');
-    const max = 400;
-    const ratio = Math.min(max / img.width, max / img.height, 1);
-    canvas.width = img.width * ratio;
-    canvas.height = img.height * ratio;
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    fotoFinal = canvas.toDataURL('image/jpeg', 0.6);
-  } catch(e) {}
-  const modal = document.getElementById('contaDetailModal');
-  if (modal) modal.style.display = 'none';
-  await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, fotoFinal);
-  await pgPauta();
-}
-
-async function confirmarCheckSemFoto(tarefaId) {
-  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
-  if (!tarefa) return;
-  const modal = document.getElementById('contaDetailModal');
-  if (modal) modal.style.display = 'none';
-  await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, '');
-  await pgPauta();
-}
-
-function verFoto(src) {
-  const ov = document.getElementById('contaDetailModal') || criarOverlay();
-  ov.style.display = 'flex';
-  ov.innerHTML = `<div style="max-width:90vw;max-height:90vh;position:relative"><img src="${src}" style="max-width:100%;max-height:85vh;border-radius:10px;display:block"><button onclick="document.getElementById('contaDetailModal').style.display='none'" style="position:absolute;top:-12px;right:-12px;width:28px;height:28px;border-radius:50%;border:none;background:var(--r);color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-weight:700">✕</button></div>`;
-}
-
-async function recarregarPauta() {
-  _pautaChecks = [];
-  _pautaTarefas = [];
-  await pgPauta();
-}
-
-async function toggleCheckGestor(tarefaId) {
-  const hoje = ds(new Date());
-  const check = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
-  const tarefa = _pautaTarefas.find(t => t.id === tarefaId);
-  if (!tarefa) return;
-  if (check) { await desfazerCheck(tarefaId); } else { await salvarCheck(tarefaId, tarefa.tarefa, tarefa.area, tarefa.checklist, ''); }
-  const el = document.getElementById('pitem_' + tarefaId);
-  if (el) {
-    const novoCheck = _pautaChecks.find(c => c.tarefaId === tarefaId && c.data === hoje);
-    const feito = !!novoCheck;
-    el.className = 'pauta-item ' + (feito ? 'feito' : 'pendente-atrasado');
-    el.querySelector('.pauta-check').textContent = feito ? '✓' : '';
-    const meta = el.querySelector('.pauta-meta');
-    if (meta) meta.innerHTML = feito ? '<span class="pauta-quem">✓ ' + novoCheck.usuario + '</span><span style="color:var(--txt3)">' + novoCheck.hora + '</span>' : '<span style="color:var(--r);font-weight:600">Pendente</span>';
-  }
-  const areas = [...new Set(_pautaTarefas.map(t => t.area).filter(Boolean))].sort();
-  const mc = document.getElementById('mc');
-  if (mc) renderPautaGestor(mc, areas, hoje);
-}
-
-// ── Registro de área no usuário (complemento ao login) ───────────
-// A área é lida da coluna 14 da aba Usuarios (após nivel)
-// Adaptação no fazerLogin() para capturar área:
-
 // ================================================================
 // fmtR — esta é a versão efetivamente usada no app inteiro (por estar
 // declarada depois, sobrescreve a da linha ~1142). Mantida para não mudar a formatação.
 function fmtR(v){return'R$\u00a0'+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// ================================================================
+// CANAIS — vendas por canal (Vendas_Historico das unidades selecionadas)
+// ================================================================
+// Agrupamento de canais: nome original (como vem do Saipos) → nome exibido.
+// Canais que não estão aqui aparecem com o nome original. Para juntar ou
+// renomear um canal, basta acrescentar/editar uma linha.
+const CANAIS_AGRUPAMENTO={
+  'Site Delivery (SAIPOS)': 'Site Delivery', // mesmo canal (site próprio), dois nomes no Saipos
+  // '99 Food':   '99 Food',
+  // 'Balcão':    'Balcão',
+  // 'iFood':     'iFood',
+  // 'Telefone':  'Telefone',
+};
+function nomeCanal(c){const k=String(c||'').trim();return CANAIS_AGRUPAMENTO[k]||k||'Sem canal';}
+
+function pgCanais(i,f,ci,cf){
+  const mc=document.getElementById('mc');
+  if(!mc)return;
+  if(!VHIST.length){mc.innerHTML='<div class="loading"><div class="spin"></div>Aguardando dados...</div>';return;}
+  const is=ds(i),fs=ds(f),cis=ds(ci),cfs=ds(cf);
+  const perA=VHIST.filter(v=>v.data>=is&&v.data<=fs);
+  const perB=VHIST.filter(v=>v.data>=cis&&v.data<=cfs);
+
+  function resumo(lista){
+    const m={};
+    lista.forEach(v=>{
+      const c=nomeCanal(v.canal);
+      if(!m[c])m[c]={fat:0,ped:0,canQt:0,canVal:0,desc:0,ent:0};
+      if(v.cancelado){m[c].canQt++;m[c].canVal+=v.valor||0;}
+      else{m[c].fat+=v.valor||0;m[c].ped++;m[c].desc+=v.desconto||0;m[c].ent+=v.entrega||0;}
+    });
+    return m;
+  }
+  const mA=resumo(perA),mB=resumo(perB);
+  const canais=Object.keys(mA).sort((a,b)=>mA[b].fat-mA[a].fat);
+  if(!canais.length){mc.innerHTML='<div class="loading" style="color:var(--txt3)">Nenhum pedido no período selecionado.</div>';return;}
+
+  const tot=x=>Object.values(x).reduce((t,c)=>({fat:t.fat+c.fat,ped:t.ped+c.ped,canQt:t.canQt+c.canQt}),{fat:0,ped:0,canQt:0});
+  const tA=tot(mA),tB=tot(mB);
+  const tickA=tA.ped>0?tA.fat/tA.ped:0,tickB=tB.ped>0?tB.fat/tB.ped:0;
+  const canPctA=(tA.ped+tA.canQt)>0?tA.canQt/(tA.ped+tA.canQt)*100:0;
+  const canPctB=(tB.ped+tB.canQt)>0?tB.canQt/(tB.ped+tB.canQt)*100:0;
+  const top=canais[0];
+  const topPct=tA.fat>0?Math.round(mA[top].fat/tA.fat*100):0;
+  const cColors=['#e03535','#f97316','#a855f7','#22c55e','#3b82f6','#eab308','#14b8a6','#ec4899'];
+  const corCanal={};canais.forEach((c,k)=>{corCanal[c]=cColors[k%cColors.length];});
+  const pct1=x=>x.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+
+  // Cards
+  const cards=
+    '<div class="metrics">'+
+    '<div class="mc green"><div class="mc-icon">🏆</div><div class="mc-lbl">Canal com maior faturamento</div><div class="mc-val" style="font-size:20px">'+top+'</div><div class="mc-comp"><span class="mc-ct">'+fmtR(mA[top].fat)+' · '+topPct+'% do total</span></div></div>'+
+    '<div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Total de pedidos</div><div class="mc-val">'+fmt(tA.ped)+'</div><div class="mc-comp">'+badge(dlt(tA.ped,tB.ped))+'<span class="mc-ct">vs ant. ('+fmt(tB.ped)+')</span></div></div>'+
+    '<div class="mc blue"><div class="mc-icon">🎟️</div><div class="mc-lbl">Ticket médio geral</div><div class="mc-val">'+fmtR(tickA)+'</div><div class="mc-comp">'+badge(dlt(tickA,tickB))+'<span class="mc-ct">vs ant. ('+fmtR(tickB)+')</span></div></div>'+
+    '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">% de cancelamento</div><div class="mc-val">'+pct1(canPctA)+'</div><div class="mc-comp">'+badge(dlt(canPctA,canPctB),true)+'<span style="font-size:10px;color:var(--txt3)">'+fmt(tA.canQt)+' pedidos</span><span class="mc-ct">vs ant. ('+pct1(canPctB)+')</span></div></div>'+
+    '</div>';
+
+  // Tabela por canal
+  const thR='style="text-align:right"',tdR='style="text-align:right"';
+  const linhas=canais.map(c=>{
+    const a=mA[c],b=mB[c]||{fat:0,ped:0};
+    const tkA=a.ped>0?a.fat/a.ped:0,tkB=b.ped>0?b.fat/b.ped:0;
+    const totCanal=a.ped+a.canQt;
+    const vF=dlt(a.fat,b.fat),vP=dlt(a.ped,b.ped),vT=dlt(tkA,tkB);
+    return '<tr>'+
+      '<td style="font-weight:600;white-space:nowrap"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+corCanal[c]+';margin-right:6px"></span>'+c+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.fat)+'</td>'+
+      '<td '+tdR+'>'+(tA.fat>0?Math.round(a.fat/tA.fat*100):0)+'%</td>'+
+      '<td '+tdR+'>'+fmt(a.ped)+'</td>'+
+      '<td '+tdR+'>'+fmtR(tkA)+'</td>'+
+      '<td '+tdR+'>'+fmt(a.canQt)+'</td>'+
+      '<td '+tdR+'>'+(totCanal>0?pct1(a.canQt/totCanal*100):'-')+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.canVal)+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.desc)+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.ped>0?a.desc/a.ped:0)+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.ent)+'</td>'+
+      '<td '+tdR+'>'+fmtR(a.ped>0?a.ent/a.ped:0)+'</td>'+
+      '<td '+tdR+'>'+(vF!==null?badge(vF):'-')+'</td>'+
+      '<td '+tdR+'>'+(vP!==null?badge(vP):'-')+'</td>'+
+      '<td '+tdR+'>'+(vT!==null?badge(vT):'-')+'</td>'+
+      '</tr>';
+  }).join('');
+  const tabela='<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Desempenho por canal</div><div class="card-sub">Ordenado por faturamento · pedidos não cancelados · variação vs período anterior</div></div></div>'+
+    '<div class="tw"><table><thead><tr><th>Canal</th><th '+thR+'>Faturamento</th><th '+thR+'>% do total</th><th '+thR+'>Pedidos</th><th '+thR+'>Ticket médio</th><th '+thR+'>Cancel.</th><th '+thR+'>% cancel.</th><th '+thR+'>Valor cancel.</th><th '+thR+'>Descontos</th><th '+thR+'>Desc./pedido</th><th '+thR+'>Taxa entrega</th><th '+thR+'>Entrega/pedido</th><th '+thR+'>Var. fat.</th><th '+thR+'>Var. pedidos</th><th '+thR+'>Var. ticket</th></tr></thead><tbody>'+linhas+'</tbody></table></div></div>';
+
+  // Faturamento por mês, por canal (período atual)
+  const MES_AB=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const meses=[...new Set(perA.filter(v=>!v.cancelado&&v.data).map(v=>v.data.substring(0,7)))].sort();
+  const fatMes={};canais.forEach(c=>{fatMes[c]={};});
+  perA.forEach(v=>{if(v.cancelado||!v.data)return;const c=nomeCanal(v.canal);const k=v.data.substring(0,7);fatMes[c][k]=(fatMes[c][k]||0)+(v.valor||0);});
+
+  // Pedidos por dia da semana, por canal (período atual)
+  const DI=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'],AB=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const pedDia={};canais.forEach(c=>{pedDia[c]=DI.map(()=>0);});
+  perA.forEach(v=>{if(v.cancelado||!v.data)return;const dt=new Date(v.data+'T12:00:00');const idx=dt.getDay()===0?6:dt.getDay()-1;pedDia[nomeCanal(v.canal)][idx]++;});
+
+  const graficos='<div class="fin-row">'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Faturamento por mês</div><div class="card-sub">Por canal · período selecionado</div></div></div><canvas id="cCanMes" height="220"></canvas></div>'+
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Pedidos por dia da semana</div><div class="card-sub">Por canal · período selecionado</div></div></div><canvas id="cCanDia" height="220"></canvas></div>'+
+    '</div>';
+
+  // Canal × unidade (só com mais de uma unidade selecionada)
+  let cruz='';
+  const unSel=UNIDADES_TODAS.filter(u=>UNIDADES_SEL.includes(u));
+  if(unSel.length>1){
+    const cu={};
+    perA.forEach(v=>{if(v.cancelado)return;const c=nomeCanal(v.canal);if(!cu[c])cu[c]={};if(!cu[c][v.unidade])cu[c][v.unidade]={fat:0,ped:0};cu[c][v.unidade].fat+=v.valor||0;cu[c][v.unidade].ped++;});
+    const hdr='<tr><th>Canal</th>'+unSel.map(u=>'<th '+thR+'>'+u+' · fat.</th><th '+thR+'>'+u+' · ped.</th>').join('')+'</tr>';
+    const rows=canais.map(c=>'<tr><td style="font-weight:600;white-space:nowrap">'+c+'</td>'+unSel.map(u=>{const x=(cu[c]||{})[u]||{fat:0,ped:0};return '<td '+tdR+'>'+fmtR(x.fat)+'</td><td '+tdR+'>'+fmt(x.ped)+'</td>';}).join('')+'</tr>').join('');
+    cruz='<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-ttl">Canal × unidade</div><div class="card-sub">Faturamento e pedidos não cancelados no período</div></div></div><div class="tw"><table><thead>'+hdr+'</thead><tbody>'+rows+'</tbody></table></div></div>';
+  }
+
+  mc.innerHTML=cards+tabela+cruz+graficos;
+
+  setTimeout(function(){
+    try{
+      dC('cCanMes');
+      CHARTS['cCanMes']=new Chart(document.getElementById('cCanMes').getContext('2d'),{
+        type:'bar',
+        data:{labels:meses.map(k=>MES_AB[+k.substring(5,7)-1]+'/'+k.substring(2,4)),datasets:canais.map(c=>({label:c,data:meses.map(k=>fatMes[c][k]||0),backgroundColor:corCanal[c],borderRadius:4}))},
+        options:{...CO,plugins:{...CO.plugins,tooltip:{callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+fmtR(ctx.raw);}}}},scales:{...CO.scales,x:{...CO.scales.x,stacked:true},y:{...CO.scales.y,stacked:true}}}
+      });
+      dC('cCanDia');
+      CHARTS['cCanDia']=new Chart(document.getElementById('cCanDia').getContext('2d'),{
+        type:'bar',
+        data:{labels:AB,datasets:canais.map(c=>({label:c,data:pedDia[c],backgroundColor:corCanal[c],borderRadius:4}))},
+        options:{...CO}
+      });
+    }catch(ec){console.error('Canais charts err:',ec.message);}
+  },200);
+}
 
 function pgSemanas(){
   const mc=document.getElementById('mc');
