@@ -306,7 +306,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="nav-item" onclick="goPage('adicionais',this)"><span class="nav-icon">📦</span>Adicionais</div>
       <div class="nav-item" onclick="goPage('contas',this)"><span class="nav-icon">💰</span>Contas a Pagar</div>
       <div class="nav-item" onclick="goPage('pauta',this)"><span class="nav-icon">✅</span>Pauta do Dia</div>
-      <div class="nav-item" onclick="goPage('metaads',this)"><span class="nav-icon">📣</span>Meta Ads</div>
       <div class="nav-item" onclick="goPage('semanas',this)"><span class="nav-icon">📅</span>Semanas</div>
       <div class="nav-sec">Dados</div>
       <div class="nav-item" onclick="goPage('financeiro',this)"><span class="nav-icon">💰</span>Financeiro</div>
@@ -400,6 +399,25 @@ const APPS_URL=CONTAS_URL.split('?')[0];
 const DEFAULT_UNIDADES=['Pituba'];
 const UNIDADES_TODAS=['Pituba','Alphaville','Vilas'];
 const UNIDADES_KEY='itta_unidades';
+// ── Quais unidades têm dados em cada módulo (uma linha por módulo — mude aqui) ──
+const DADOS_POR_MODULO={
+  analytics:          ['Pituba','Alphaville','Vilas'], // Visão geral: pedidos, faturamento, ticket médio, cancelamentos
+  analytics_sabores:  ['Pituba'],                      // Visão geral: cards e blocos de pizzas e sabores
+  financeiro:         ['Pituba','Alphaville','Vilas'], // Financeiro: parte de vendas
+  financeiro_sabores: ['Pituba'],                      // Financeiro: receita por horário e por sabor
+  semanas:            ['Pituba','Alphaville','Vilas'],
+  sabores:            ['Pituba'],
+  horarios:           ['Pituba'],
+  dias:               ['Pituba'],
+  bairros:            ['Pituba'],
+  clientes:           ['Pituba'],
+  cupons:             ['Pituba'],
+  adicionais:         ['Pituba'],
+  tabela:             ['Pituba'],
+  contas:             ['Pituba'],
+  dre:                ['Pituba'],
+  pauta:              ['Pituba'],
+};
 // Para limitar período padrão de carregamento (últimos 6 meses = ~180 dias)
 // A planilha completa é carregada, filtros são aplicados no cliente
 const SABS=["La Mortazza | Sabor do Mês","Calabresa","Frango com Catupiry","Calabresa Bombay","Calabresitta","Portuguesa","Marguerita","Quatro Queijos","Lombinho Agridoce","Pepperoni","Calabresa com Catupiry","Bela Parma","Calabronx","Gratinata","Jalapepper (muito apimentada)","La Caprina","Baconzola","Brie com Geleia de Pimenta","Bacon à Moda Itta","Nordestina","Atum","Baiana","Brie com Parma","Caipira Cremoso","Calabresa 4 queijos","Calabresa Especial","Camarão com Catupiry","Di Parma","Camarão com Pesto","Camarão Oriental","Imperial","Frango ao Pesto","Corn & Bacon","Marguerita Especial","Mussarela","Lombinho com Catupiry","Pepperoni com Catupiry","Pepperoni Supremo","Chocolate Meio a Meio"];
@@ -411,27 +429,62 @@ let cMode='auto',PAGE='analytics',CHARTS={};
 let VHIST_ALL=[],VHIST_PITUBA=[],UNIDADES_ERRO=[];
 let UNIDADES_SEL=lerUnidadesSalvas();
 
+// Acesso do usuário (módulos + unidades) — controle de tela, não é segurança
+function usuarioAtual(){try{return USUARIO_ATUAL;}catch(e){return null;}} // USUARIO_ATUAL é declarado mais abaixo
+function ehGestor(u){u=u||usuarioAtual();return !!u&&(u.nivel==='GESTOR'||u.admin===true);}
+function normUnidade(x){const k=String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'').toLowerCase();return UNIDADES_TODAS.find(u=>u.toLowerCase()===k)||null;}
+function parseUnidades(txt){const v=String(txt??'').split(',').map(normUnidade).filter(Boolean);return UNIDADES_TODAS.filter(u=>v.includes(u));}
+function unidadesPermitidas(){
+  const u=usuarioAtual();
+  if(!u||ehGestor(u))return UNIDADES_TODAS.slice();
+  const v=Array.isArray(u.unidades)?UNIDADES_TODAS.filter(x=>u.unidades.includes(x)):[];
+  return v.length?v:['Pituba']; // sessão antiga ou coluna Q vazia/inválida = só Pituba
+}
+function podeVerModulo(p){
+  const u=usuarioAtual();
+  if(!u)return true;
+  if(p==='usuarios')return ehGestor(u);
+  if(ehGestor(u))return true;
+  return !!(u.modulos&&u.modulos[p]===true);
+}
+// Unidades permitidas ao usuário que têm dados no módulo
+function unidadesComDados(mod){const d=DADOS_POR_MODULO[mod];const perm=unidadesPermitidas();return d?perm.filter(x=>d.includes(x)):perm;}
+function semDadosNoModulo(mod){return !!DADOS_POR_MODULO[mod]&&unidadesComDados(mod).length===0;}
+function listaUnidadesTxt(l){return l.length<=1?(l[0]||''):l.slice(0,-1).join(', ')+' e '+l[l.length-1];}
+
 // Unidades
+function padraoUnidades(){const perm=unidadesPermitidas();const d=DEFAULT_UNIDADES.filter(u=>perm.includes(u));return d.length?d:perm.slice();}
 function lerUnidadesSalvas(){
+  const perm=unidadesPermitidas();
   try{
     const s=JSON.parse(localStorage.getItem(UNIDADES_KEY)||'null');
-    if(Array.isArray(s)){const v=s.filter(u=>UNIDADES_TODAS.includes(u));if(v.length)return v;}
+    if(Array.isArray(s)){const v=s.filter(u=>perm.includes(u));if(v.length)return v;}
   }catch(e){}
-  return DEFAULT_UNIDADES.slice();
+  return padraoUnidades();
 }
 function salvarUnidades(){try{localStorage.setItem(UNIDADES_KEY,JSON.stringify(UNIDADES_SEL));}catch(e){}}
 function soPituba(){return UNIDADES_SEL.length===1&&UNIDADES_SEL[0]==='Pituba';}
 function incluiPituba(){return UNIDADES_SEL.includes('Pituba');}
 function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));}
-function avisoParcialHTML(){return soPituba()?'':'<div class="un-aviso">⚠️ Estes dados ainda incluem apenas a Pituba. Alphaville e Vilas entram na próxima fase.</div>';}
+function avisoParcialHTML(mod){
+  if(soPituba())return'';
+  const d=DADOS_POR_MODULO[mod]||['Pituba'];
+  const faltam=UNIDADES_SEL.filter(u=>!d.includes(u));
+  if(!faltam.length)return'';
+  const tem=(d.length===1&&d[0]==='Pituba')?'a Pituba':listaUnidadesTxt(d);
+  return '<div class="un-aviso">⚠️ Estes dados ainda incluem apenas '+tem+'. '+listaUnidadesTxt(faltam)+(faltam.length>1?' entram':' entra')+' na próxima fase.</div>';
+}
 function syncUnidadesUI(){
-  document.querySelectorAll('#unRow input[type=checkbox]').forEach(c=>{c.checked=UNIDADES_SEL.includes(c.value);});
+  const perm=unidadesPermitidas();
+  document.querySelectorAll('#unRow input[type=checkbox]').forEach(c=>{c.checked=UNIDADES_SEL.includes(c.value);const lb=c.closest('label');if(lb)lb.style.display=perm.includes(c.value)?'':'none';});
+  const unRow=document.getElementById('unRow');const unFlt=unRow&&unRow.closest('.flt');
+  if(unFlt)unFlt.style.display=perm.length>1?'':'none'; // só 1 unidade: esconde as caixas, fica o selo
   const l=document.getElementById('ulbl');
   if(l)l.textContent=UNIDADES_TODAS.filter(u=>UNIDADES_SEL.includes(u)).map(u=>u+(UNIDADES_ERRO.includes(u)?' (sem dados)':'')).join(' + ');
 }
 function mudarUnidades(lista){
-  UNIDADES_SEL=UNIDADES_TODAS.filter(u=>lista.includes(u));
-  if(!UNIDADES_SEL.length)UNIDADES_SEL=DEFAULT_UNIDADES.slice();
+  UNIDADES_SEL=unidadesPermitidas().filter(u=>lista.includes(u));
+  if(!UNIDADES_SEL.length)UNIDADES_SEL=padraoUnidades();
   salvarUnidades();filtrarVhistUnidades();syncUnidadesUI();aplicar();
 }
 function toggleUnidade(cb){
@@ -439,7 +492,7 @@ function toggleUnidade(cb){
   if(!marcadas.length){cb.checked=true;return;} // pelo menos uma sempre marcada
   mudarUnidades(marcadas);
 }
-function selTodasUnidades(){mudarUnidades(UNIDADES_TODAS.slice());}
+function selTodasUnidades(){mudarUnidades(unidadesPermitidas());}
 function parseVendasUnidade(rows,unidade){
   return rows.map(r=>{
     let dt='';
@@ -456,7 +509,8 @@ function parseVendasUnidade(rows,unidade){
 // Sidebar
 function toggleSb(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show');}
-function goPage(p,el){if(USUARIO_ATUAL&&USUARIO_ATUAL.modulos&&USUARIO_ATUAL.modulos[p]===false)return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');const T={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',adicionais:'Adicionais',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia',metaads:'Meta Ads',semanas:'Semanas do Mês'};document.getElementById('pttl').textContent=T[p]||p;closeSb();aplicar();}
+const TITULOS_PAG={overview:'Visão geral',analytics:'Visão geral',sabores:'Sabores',horarios:'Horários',dias:'Dias da semana',bairros:'Bairros',clientes:'Clientes',cupons:'Cupons',adicionais:'Adicionais',contas:'Contas a Pagar',tabela:'Tabela completa',financeiro:'Financeiro',dre:'DRE',usuarios:'Gestão de Usuários',pauta:'Pauta do Dia',semanas:'Semanas do Mês'};
+function goPage(p,el){if(!podeVerModulo(p))return;PAGE=p;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');document.getElementById('pttl').textContent=TITULOS_PAG[p]||p;closeSb();aplicar();}
 
 // Dias chips
 document.querySelectorAll('.db').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -556,6 +610,9 @@ function toggleTheme(){
 // Carregar dados
 async function load(){
   try{
+    // Usuário sem a Pituba entre as unidades: não baixa as abas só da Pituba (variáveis ficam vazias)
+    const carregaPituba=unidadesPermitidas().includes('Pituba');
+    if(carregaPituba){ // Sabores_6meses + Vendas_Historico (Pituba)
     const r=await fetch(BASE+encodeURIComponent('Sabores_6meses'));
     const t=await r.text();
     const j=JSON.parse(t.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
@@ -612,6 +669,7 @@ async function load(){
       }).filter(d=>d.id); // mantém cancelados para cálculo
       console.log('Vendas_Historico:',VHIST.length,'(incl. cancelados)');
     }catch(e){console.log('VH err:',e);}
+    } // fim if(carregaPituba) — Sabores_6meses + Vendas_Historico
     VHIST.forEach(d=>{d.unidade='Pituba';});
     VHIST_PITUBA=VHIST;
 
@@ -631,6 +689,7 @@ async function load(){
     VHIST_ALL=VHIST_PITUBA.concat(...outrasUn);
     filtrarVhistUnidades();
 
+    if(carregaPituba){ // abas só da Pituba: Vendas_Raw, Bairros_Raw, CEPs_Coords, Clientes_Raw, Cupons_Raw, Itens_Raw, ContasPagar
     // Vendas_Raw
     try{
       const rv=await fetch(BASE+encodeURIComponent('Vendas_Raw'));
@@ -752,6 +811,7 @@ async function load(){
       CONTAS=(jsonCP.table?.rows||[]).slice(1).map((r,i)=>{const st=String(r.c[7]?.v||'').toLowerCase();return{id:String(r.c[0]?.v||'cp_'+i),nome:r.c[1]?.v||'',categoria:r.c[2]?.v||'',valor:parseFloat(r.c[3]?.v||0),vencimento:parseDate(r.c[4]?.v),codigoBarras:r.c[5]?.v||'',observacoes:r.c[6]?.v||'',status:st==='pago'?'pago':'pendente',dataPagamento:parseDate(r.c[8]?.v),criadoPor:r.c[9]?.v||'',formaPagamento:r.c[12]?.v||''};}).filter(d=>d.nome);
       console.log('ContasPagar:',CONTAS.length,'registros');
     }catch(e){console.log('ContasPagar err:',e);}
+    } // fim if(carregaPituba) — Vendas_Raw … ContasPagar
 
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
@@ -825,6 +885,8 @@ function aplicar(){
     console.log('aplicar v2.0: page='+PAGE+' at='+at.length+' an='+an.length);
     document.getElementById('plbl').textContent=`${fd(i)}→${fd(f)} · vs ${fd(ci)}→${fd(cf)}`;
     Object.keys(CHARTS).forEach(k=>dC(k));
+    if(!podeVerModulo(PAGE)){document.getElementById('mc').innerHTML='<div class="loading" style="color:var(--txt3)">Você não tem acesso a este módulo.</div>';return;}
+    if(semDadosNoModulo(PAGE)){document.getElementById('mc').innerHTML='<div class="loading" style="color:var(--txt3)">Os dados deste módulo ainda não estão disponíveis para '+listaUnidadesTxt(UNIDADES_SEL)+'.</div>';return;}
     if(PAGE==='financeiro'){pgFinanceiro(at,an,i,f,ci,cf);}
     else if(PAGE==='analytics')pgOverview(at,an,i,f,ci,cf);
     else if(PAGE==='sabores')pgSabores(at,an);
@@ -838,12 +900,11 @@ function aplicar(){
     else if(PAGE==='tabela')pgTabela(at,an);
     else if(PAGE==='dre'){pgDRE();return;}
     else if(PAGE==='pauta'){pgPauta();return;}
-    else if(PAGE==='metaads'){pgMetaAds();return;}
     else if(PAGE==='semanas'){pgSemanas();return;}
     else if(PAGE==='usuarios'){pgUsuarios();return;}
     // Aviso de dados parciais (módulos que ainda usam apenas dados da Pituba)
     if(!soPituba()&&['sabores','horarios','dias','bairros','clientes','cupons','adicionais','tabela'].includes(PAGE)){
-      const mcEl=document.getElementById('mc');if(mcEl)mcEl.insertAdjacentHTML('afterbegin',avisoParcialHTML());
+      const mcEl=document.getElementById('mc');if(mcEl)mcEl.insertAdjacentHTML('afterbegin',avisoParcialHTML(PAGE));
     }
   } catch(e) {
     console.error('ERRO em aplicar():', e.message, e.stack);
@@ -891,6 +952,8 @@ function pgOverview(at,an,i,f,ci,cf){
   const dFat=dlt(fatOvA,fatOvB),dTick=dlt(tickOvA,tickOvB);
   const soPit=soPituba();
   const notaPit=soPit?'':'<div style="font-size:9px;color:var(--yellow);margin-top:3px">⚠️ apenas Pituba</div>';
+  // Sem a Pituba entre as unidades do usuário: não há dados de pizzas/sabores → só pedidos, faturamento, ticket e cancelamentos
+  const semSab=semDadosNoModulo('analytics_sabores');
 
   const mapaA=agrupS(at),mapaB=agrupS(an);
   const top5=Object.entries(mapaA).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
@@ -921,6 +984,17 @@ function pgOverview(at,an,i,f,ci,cf){
   at.forEach(d=>{mEA[d.data]=(mEA[d.data]||0)+d.qtd;});
   an.forEach(d=>{mEB[d.data]=(mEB[d.data]||0)+d.qtd;});
 
+  if(semSab){
+    mc.innerHTML=
+      '<div class="metrics">'+
+      '<div class="mc orange"><div class="mc-icon">🧾</div><div class="mc-lbl">Pedidos únicos</div><div class="mc-val">'+fmt(pedA)+'</div><div class="mc-comp">'+badge(d2)+'<span class="mc-ct">vs ant. ('+fmt(pedB)+')</span></div></div>'+
+      '<div class="mc teal"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento</div><div class="mc-val">'+fmtR(fatOvA)+'</div><div class="mc-comp">'+badge(dFat)+'<span class="mc-ct">vs ant. ('+fmtR(fatOvB)+')</span></div></div>'+
+      '<div class="mc blue"><div class="mc-icon">🎟️</div><div class="mc-lbl">Ticket médio</div><div class="mc-val">'+fmtR(tickOvA)+'</div><div class="mc-comp">'+badge(dTick)+'<span class="mc-ct">vs ant. ('+fmtR(tickOvB)+')</span></div></div>'+
+      '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">'+fmtR(canEstA)+'</div><div style="font-size:9px;color:var(--txt3);margin-top:3px">⚠️ estimativa baseada no ticket médio</div><div class="mc-comp">'+badge(d4,true)+'<span style="font-size:10px;color:var(--txt3)">'+canA+' pedidos</span><span class="mc-ct">vs ant. ('+fmtR(canEstB)+')</span></div></div>'+
+      '</div>';
+    return;
+  }
+
   mc.innerHTML=
     '<div class="metrics m6">'+
     '<div class="mc green"><div class="mc-icon">🍕</div><div class="mc-lbl">Pizzas vendidas</div><div class="mc-val">'+fmt(totA)+'</div>'+notaPit+'<div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmt(totB)+')</span></div></div>'+
@@ -930,7 +1004,7 @@ function pgOverview(at,an,i,f,ci,cf){
     '<div class="mc purple"><div class="mc-icon">✨</div><div class="mc-lbl">Sabores vendidos</div><div class="mc-val">'+sabA+'</div>'+notaPit+'<div class="mc-comp">'+badge(d3)+'<span class="mc-ct">vs ant. ('+sabB+')</span></div></div>'+
     '<div class="mc red"><div class="mc-icon">❌</div><div class="mc-lbl">Cancelamentos</div><div class="mc-val">'+fmtR(canEstA)+'</div><div style="font-size:9px;color:var(--txt3);margin-top:3px">⚠️ estimativa baseada no ticket médio</div><div class="mc-comp">'+badge(d4,true)+'<span style="font-size:10px;color:var(--txt3)">'+canA+' pedidos</span><span class="mc-ct">vs ant. ('+fmtR(canEstB)+')</span></div></div>'+
     '</div>'+
-    avisoParcialHTML()+
+    avisoParcialHTML('analytics_sabores')+
     '<div class="g31">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução diária de pizzas vendidas</div><div class="card-sub">Quantidade de pizzas por dia · atual vs anterior</div></div></div><canvas id="cEv" height="170"></canvas></div>'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Top 5 sabores</div><div class="card-sub">Com comparativo</div></div></div>'+topRows+'</div>'+
@@ -1091,6 +1165,8 @@ function pgFinanceiro(at,an,i,f,ci,cf){
   fA.forEach(v=>{mFA[v.data]=(mFA[v.data]||0)+v.valor;});
   fB.forEach(v=>{mFB[v.data]=(mFB[v.data]||0)+v.valor;});
 
+  // Sem a Pituba entre as unidades do usuário: esconde a parte de sabores (receita por horário e por sabor)
+  const semSab=semDadosNoModulo('financeiro_sabores');
   mc.innerHTML=
     '<div class="metrics">'+
     '<div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Faturamento líquido</div><div class="mc-val" style="font-size:22px">'+fmtR(fatA)+'</div><div class="mc-comp">'+badge(d1)+'<span class="mc-ct">vs ant. ('+fmtR(fatB)+')</span></div></div>'+
@@ -1102,11 +1178,14 @@ function pgFinanceiro(at,an,i,f,ci,cf){
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Evolução do faturamento</div><div class="card-sub">Receita diária atual vs anterior</div></div></div><canvas id="cFatEv" height="180"></canvas></div>'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Por canal de venda</div><div class="card-sub">Distribuição do faturamento</div></div></div>'+canalHtml+'</div>'+
     '</div>'+
+    (semSab?
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita por dia da semana</div><div class="card-sub">Faturamento real acumulado</div></div></div><canvas id="cFatDia" height="200"></canvas></div>'
+    :
     '<div class="fin-row">'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita por dia da semana</div><div class="card-sub">Faturamento real acumulado</div></div></div><canvas id="cFatDia" height="200"></canvas></div>'+
     '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita por horário</div><div class="card-sub">Estimada por tamanho × preço médio</div></div></div><canvas id="cFatHor" height="200"></canvas></div>'+
     '</div>'+
-    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita estimada por sabor</div><div class="card-sub">Top 10 · preço médio × quantidade por tamanho</div></div></div>'+saborHtml+'</div>';
+    '<div class="card"><div class="card-hdr"><div><div class="card-ttl">Receita estimada por sabor</div><div class="card-sub">Top 10 · preço médio × quantidade por tamanho</div></div></div>'+saborHtml+'</div>');
 
   setTimeout(function(){
     try{
@@ -1128,7 +1207,7 @@ function pgFinanceiro(at,an,i,f,ci,cf){
         ]},options:{...CO}
       });
       dC('cFatHor');
-      CHARTS['cFatHor']=new Chart(document.getElementById('cFatHor').getContext('2d'),{
+      if(!semSab)CHARTS['cFatHor']=new Chart(document.getElementById('cFatHor').getContext('2d'),{
         type:'line',
         data:{labels:BLO,datasets:[
           {label:'Atual',data:BLO.map(b=>Math.round(fhA[b])),borderColor:'#f97316',backgroundColor:'rgba(249,115,22,0.08)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3},
@@ -1681,7 +1760,12 @@ const MODULOS_MAP = {
   contas:     10,
   financeiro: 11,
   tabela:     12,
+  pauta:      15, // P (Q = 16 é Unidades)
+  adicionais: 17, // R
+  semanas:    18, // S
+  dre:        19, // T
 };
+const COL_UNIDADES = 16; // Q — lista separada por vírgula (Pituba, Alphaville, Vilas)
 
 let USUARIO_ATUAL = null;
 
@@ -1720,6 +1804,7 @@ async function fazerLogin() {
     for (const row of rows) {
       const rEmail = String(row.c[1]?.v||'').toLowerCase().trim();
       const rSenha = String(row.c[2]?.v||'').trim();
+      if (!rEmail.includes('@') || rEmail === 'email') continue; // pula cabeçalho/linhas inválidas
       if (rEmail === email && rSenha === senha) {
         usuarioEncontrado = {
           nome:     row.c[0]?.v || 'Usuário',
@@ -1729,10 +1814,13 @@ async function fazerLogin() {
           admin:    (row.c[13]?.v||'').toUpperCase() === 'GESTOR',
           area:     (row.c[14]?.v||'').toString().trim(), // coluna O = área do funcionário
         };
-        // Lê permissões de cada módulo
+        // Lê permissões de cada módulo (só "SIM" libera)
         Object.entries(MODULOS_MAP).forEach(([mod, colIdx]) => {
-          usuarioEncontrado.modulos[mod] = (row.c[colIdx]?.v||'').toUpperCase() === 'SIM';
+          usuarioEncontrado.modulos[mod] = String(row.c[colIdx]?.v??'').trim().toUpperCase() === 'SIM';
         });
+        // Unidades (coluna Q). Gestor = todas; comum com Q vazia/inválida = só Pituba
+        const unQ = parseUnidades(row.c[COL_UNIDADES]?.v);
+        usuarioEncontrado.unidades = ehGestor(usuarioEncontrado) ? UNIDADES_TODAS.slice() : (unQ.length ? unQ : ['Pituba']);
         break;
       }
     }
@@ -1780,28 +1868,30 @@ function entrarNoDashboard() { _appIniciado=true;
   iniciarApp();
 }
 
-// Aplica permissões no menu
+// Aplica permissões no menu (módulos) e no seletor de unidades
 function aplicarPermissoes() {
   if (!USUARIO_ATUAL) return;
-  if (USUARIO_ATUAL.nivel==='GESTOR') return;
-  const mods = USUARIO_ATUAL.modulos;
+  // Unidades: cruza a seleção guardada no navegador com as permitidas
+  UNIDADES_SEL = lerUnidadesSalvas();
+  filtrarVhistUnidades();
+  syncUnidadesUI();
+  if (ehGestor()) return;
 
-  // Mapeia page → nav-item
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    const onclick = item.getAttribute('onclick') || '';
-    const match = onclick.match(/goPage\('(\w+)'/);
+  // Esconde do menu os módulos não liberados
+  let primeira = null;
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const match = (item.getAttribute('onclick') || '').match(/goPage\('(\w+)'/);
     if (!match) return;
     const page = match[1];
-    if (mods[page] === false) {
-      item.style.display='none';
-    }
+    if (!podeVerModulo(page)) { item.style.display='none'; item.classList.remove('active'); return; }
+    if (!primeira) primeira = { page, item };
   });
 
-  // Define página inicial como a primeira permitida
-  const ordem = ['analytics','sabores','horarios','dias','bairros','clientes','cupons','contas','financeiro','tabela'];
-  for (const p of ordem) {
-    if (mods[p] !== false) { PAGE = p; break; }
+  // Página inicial = primeira permitida, na ordem do menu
+  if (primeira && !podeVerModulo(PAGE)) {
+    PAGE = primeira.page;
+    primeira.item.classList.add('active');
+    document.getElementById('pttl').textContent = TITULOS_PAG[PAGE] || PAGE;
   }
 }
 
@@ -3425,235 +3515,9 @@ async function toggleCheckGestor(tarefaId) {
 // Adaptação no fazerLogin() para capturar área:
 
 // ================================================================
-// META ADS MODULE — Pituba Piloto
-const META_TOKEN='EAAOamNGHyTMBRdCqCNyZCy6FLorjubkx9fBoYKIZCzWcMsh2enIZBahtHyqHVZAvZCZAJJ17FZCW8YHKaSTcYZASFmw22KZCWGrbia8LifsxJTkX5uWBha4PFKpKgukep3hpjh1VHy9BmZCap20rcOclxy3Haq3lv16GiJ22ZAiz1nOXKWKHiEZAxVMsS2jt4ZAx0NgZDZD';
-const META_ACCOUNT='act_170765511843988';
-const META_BASE='https://graph.facebook.com/v19.0';
-// Campanhas da Pituba (IDs identificados na análise)
-const PITUBA_CAMP_IDS=['120245237432070325','120245233607050325'];
-
+// fmtR — esta é a versão efetivamente usada no app inteiro (por estar
+// declarada depois, sobrescreve a da linha ~1142). Mantida para não mudar a formatação.
 function fmtR(v){return'R$\u00a0'+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtPct(v){return parseFloat(v||0).toFixed(2)+'%';}
-
-async function metaFetch(endpoint){
-  const url=META_BASE+'/'+endpoint+(endpoint.includes('?')?'&':'?')+'access_token='+META_TOKEN;
-  const r=await fetch(url);
-  return r.json();
-}
-
-async function pgMetaAds(preset){
-  preset=preset||'last_30d';
-  const presetLabels={'last_7d':'Últimos 7 dias','last_14d':'Últimos 14 dias','last_30d':'Últimos 30 dias','this_month':'Este mês','last_month':'Mês passado'};
-  const mc=document.getElementById('mc');
-  mc.innerHTML='<div class="loading"><div class="spin"></div>Buscando dados Meta Ads · Pituba...</div>';
-
-  try{
-    // 1. Buscar insights das campanhas Pituba (últimos 30 dias, por dia)
-    const[campSex,campSeg]=await Promise.all([
-      metaFetch(PITUBA_CAMP_IDS[0]+'/insights?fields=campaign_name,spend,reach,impressions,clicks,ctr,actions,action_values&date_preset='+preset+'&time_increment=1'),
-      metaFetch(PITUBA_CAMP_IDS[1]+'/insights?fields=campaign_name,spend,reach,impressions,clicks,ctr,actions,action_values&date_preset='+preset+'&time_increment=1')
-    ]);
-
-    // 2. Buscar totais das campanhas
-    const[totSex,totSeg]=await Promise.all([
-      metaFetch(PITUBA_CAMP_IDS[0]+'/insights?fields=campaign_name,spend,reach,impressions,clicks,ctr,frequency,actions,action_values&date_preset='+preset),
-      metaFetch(PITUBA_CAMP_IDS[1]+'/insights?fields=campaign_name,spend,reach,impressions,clicks,ctr,frequency,actions,action_values&date_preset='+preset)
-    ]);
-
-    const dSex=(campSex.data||[]);
-    const dSeg=(campSeg.data||[]);
-
-    // Merge por data
-    const byDate={};
-    [...dSex,...dSeg].forEach(d=>{
-      const dt=d.date_start;
-      if(!byDate[dt])byDate[dt]={date:dt,spend:0,clicks:0,impressions:0,reach:0,purchases:0,revenue:0};
-      byDate[dt].spend+=parseFloat(d.spend||0);
-      byDate[dt].clicks+=parseInt(d.clicks||0);
-      byDate[dt].impressions+=parseInt(d.impressions||0);
-      byDate[dt].reach+=parseInt(d.reach||0);
-      const purch=(d.actions||[]).find(a=>a.action_type==='purchase');
-      const rev=(d.action_values||[]).find(a=>a.action_type==='purchase');
-      byDate[dt].purchases+=parseFloat(purch?.value||0);
-      byDate[dt].revenue+=parseFloat(rev?.value||0);
-    });
-
-    // Dados do Saipos Pituba no mesmo período (segue preset)
-    const hoje=new Date();
-    const fimS=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
-    const ini=new Date(hoje);
-    if(preset==='last_7d')ini.setDate(hoje.getDate()-7);
-    else if(preset==='last_14d')ini.setDate(hoje.getDate()-14);
-    else if(preset==='this_month')ini.setDate(1);
-    else if(preset==='last_month'){ini.setDate(1);ini.setMonth(ini.getMonth()-1);}
-    else ini.setDate(hoje.getDate()-30);
-    const iniS=ini.getFullYear()+'-'+String(ini.getMonth()+1).padStart(2,'0')+'-'+String(ini.getDate()).padStart(2,'0');
-
-    // Agrupar VHIST por data (pedidos não cancelados)
-    const saipByDate={};
-    (VHIST_PITUBA||[]).filter(v=>!v.cancelado&&v.data>=iniS&&v.data<=fimS).forEach(v=>{
-      if(!saipByDate[v.data])saipByDate[v.data]={pedidos:0,faturamento:0};
-      saipByDate[v.data].pedidos++;
-      saipByDate[v.data].faturamento+=v.valor||0;
-    });
-
-    // Totais Meta Pituba
-    const tSex=totSex.data?.[0]||{};
-    const tSeg=totSeg.data?.[0]||{};
-    const totalSpend=parseFloat(tSex.spend||0)+parseFloat(tSeg.spend||0);
-    const totalClicks=parseInt(tSex.clicks||0)+parseInt(tSeg.clicks||0);
-    const totalImpr=parseInt(tSex.impressions||0)+parseInt(tSeg.impressions||0);
-    const totalReach=parseInt(tSex.reach||0)+parseInt(tSeg.reach||0);
-    const totalFreqSex=parseFloat(tSex.frequency||0);
-    const totalFreqSeg=parseFloat(tSeg.frequency||0);
-    const ctrSex=parseFloat(tSex.ctr||0);
-    const ctrSeg=parseFloat(tSeg.ctr||0);
-
-    const purchSex=((tSex.actions||[]).find(a=>a.action_type==='purchase')?.value)||0;
-    const purchSeg=((tSeg.actions||[]).find(a=>a.action_type==='purchase')?.value)||0;
-    const totalPurch=parseFloat(purchSex)+parseFloat(purchSeg);
-    const revSex=((tSex.action_values||[]).find(a=>a.action_type==='purchase')?.value)||0;
-    const revSeg=((tSeg.action_values||[]).find(a=>a.action_type==='purchase')?.value)||0;
-    const totalRev=parseFloat(revSex)+parseFloat(revSeg);
-    const roas=totalSpend>0?totalRev/totalSpend:0;
-    const cpp=totalPurch>0?totalSpend/totalPurch:0;
-
-    // Totais Saipos Pituba 30d
-    const saipTotals=Object.values(saipByDate).reduce((s,v)=>({pedidos:s.pedidos+v.pedidos,faturamento:s.faturamento+v.faturamento}),{pedidos:0,faturamento:0});
-
-    // Série temporal para gráfico (datas com dados)
-    const allDates=[...new Set([...Object.keys(byDate),...Object.keys(saipByDate)])].sort();
-    const labels=allDates.map(d=>{const p=d.split('-');return p[2]+'/'+p[1];});
-    const spendSeries=allDates.map(d=>parseFloat((byDate[d]?.spend||0).toFixed(2)));
-    const pedidosSeries=allDates.map(d=>saipByDate[d]?.pedidos||0);
-    const fatSeries=allDates.map(d=>parseFloat((saipByDate[d]?.faturamento||0).toFixed(2)));
-
-    // Alertas automáticos
-    const alertas=[];
-    if(totalFreqSex>=3.5)alertas.push({tipo:'danger',icon:'🔁',msg:'Frequência Sex-Dom em '+totalFreqSex.toFixed(2)+'x — acima de 3,5x. Criativo com fadiga.'});
-    if(totalFreqSeg>=3.5)alertas.push({tipo:'danger',icon:'🔁',msg:'Frequência Seg-Qui em '+totalFreqSeg.toFixed(2)+'x — acima de 3,5x. Criativo com fadiga.'});
-    if(ctrSex<1)alertas.push({tipo:'warning',icon:'📉',msg:'CTR Sex-Dom em '+ctrSex.toFixed(2)+'% — abaixo de 1%. Avaliar criativo.'});
-    if(ctrSeg<1)alertas.push({tipo:'warning',icon:'📉',msg:'CTR Seg-Qui em '+ctrSeg.toFixed(2)+'% — abaixo de 1%. Avaliar criativo.'});
-    if(cpp>80&&totalPurch>0)alertas.push({tipo:'warning',icon:'💸',msg:'Custo por compra em '+fmtR(cpp)+' — acima de R$80. Revisar segmentação.'});
-    if(roas>=3)alertas.push({tipo:'success',icon:'🚀',msg:'ROAS de '+roas.toFixed(2)+'x — excelente. Considerar aumento de verba.'});
-    if(alertas.length===0)alertas.push({tipo:'success',icon:'✅',msg:'Campanhas dentro dos parâmetros. Nenhum alerta ativo.'});
-
-    // Render
-    mc.innerHTML=`
-<div style="margin-bottom:16px">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-    <span style="font-size:11px;color:var(--txt3)">📣 Meta Ads · Pituba Piloto · dados em tempo real</span>
-    <div style="display:flex;gap:4px;flex-wrap:wrap">
-      ${['last_7d','last_14d','last_30d','this_month','last_month'].map(p=>`<button onclick="pgMetaAds('${p}')" style="font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:none;cursor:pointer;font-family:inherit;background:${preset===p?'var(--r)':'var(--bg4)'};color:${preset===p?'#fff':'var(--txt2)'}">${presetLabels[p]}</button>`).join('')}
-    </div>
-  </div>
-
-  <div class="metrics" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
-    <div class="mc green"><div class="mc-icon">💰</div><div class="mc-lbl">Gasto Meta</div><div class="mc-val" style="font-size:18px">${fmtR(totalSpend)}</div></div>
-    <div class="mc blue"><div class="mc-icon">👁</div><div class="mc-lbl">Alcance</div><div class="mc-val" style="font-size:18px">${totalReach.toLocaleString('pt-BR')}</div></div>
-    <div class="mc purple"><div class="mc-icon">🖱</div><div class="mc-lbl">Cliques</div><div class="mc-val" style="font-size:18px">${totalClicks.toLocaleString('pt-BR')}</div></div>
-    <div class="mc orange"><div class="mc-icon">🛒</div><div class="mc-lbl">Compras</div><div class="mc-val" style="font-size:18px">${Math.round(totalPurch)}</div></div>
-    <div class="mc green"><div class="mc-icon">📈</div><div class="mc-lbl">ROAS</div><div class="mc-val" style="font-size:18px;color:${roas>=2?'var(--green)':roas>=1.5?'var(--orange)':'var(--r)'}">${roas.toFixed(2)}x</div></div>
-    <div class="mc ${cpp>80?'red':'teal'}"><div class="mc-icon">🎯</div><div class="mc-lbl">Custo/Compra</div><div class="mc-val" style="font-size:18px">${totalPurch>0?fmtR(cpp):'–'}</div></div>
-  </div>
-
-  <div class="g2" style="margin-bottom:12px">
-    <div class="card">
-      <div class="card-hdr"><div><div class="card-ttl">Campanhas Pituba · detalhe</div><div class="card-sub">Sex-Dom vs Seg-Qui</div></div></div>
-      <table style="width:100%;font-size:12px;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left;padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">Campanha</th>
-          <th style="padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">Gasto</th>
-          <th style="padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">CTR</th>
-          <th style="padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">Freq.</th>
-          <th style="padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">Compras</th>
-          <th style="padding:6px 8px;font-size:9px;color:var(--txt3);border-bottom:1px solid var(--border)">Receita</th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td style="padding:9px 8px;font-weight:600">Sex–Dom</td>
-            <td style="padding:9px 8px;text-align:center">${fmtR(tSex.spend||0)}</td>
-            <td style="padding:9px 8px;text-align:center;color:${ctrSex>=1?'var(--green)':'var(--r)'}">${fmtPct(tSex.ctr||0)}</td>
-            <td style="padding:9px 8px;text-align:center;color:${totalFreqSex>=3.5?'var(--r)':'var(--txt)'}">${totalFreqSex.toFixed(2)}x</td>
-            <td style="padding:9px 8px;text-align:center">${Math.round(purchSex)}</td>
-            <td style="padding:9px 8px;text-align:center;color:var(--green)">${fmtR(revSex)}</td>
-          </tr>
-          <tr>
-            <td style="padding:9px 8px;font-weight:600">Seg–Qui</td>
-            <td style="padding:9px 8px;text-align:center">${fmtR(tSeg.spend||0)}</td>
-            <td style="padding:9px 8px;text-align:center;color:${ctrSeg>=1?'var(--green)':'var(--r)'}">${fmtPct(tSeg.ctr||0)}</td>
-            <td style="padding:9px 8px;text-align:center;color:${totalFreqSeg>=3.5?'var(--r)':'var(--txt)'}">${totalFreqSeg.toFixed(2)}x</td>
-            <td style="padding:9px 8px;text-align:center">${Math.round(purchSeg)}</td>
-            <td style="padding:9px 8px;text-align:center;color:var(--green)">${fmtR(revSeg)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <div class="card-hdr"><div><div class="card-ttl">Saipos · Pituba 30d</div><div class="card-sub">Pedidos e faturamento reais</div></div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Pedidos</div>
-          <div style="font-size:28px;font-weight:800;color:var(--green)">${saipTotals.pedidos.toLocaleString('pt-BR')}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Faturamento</div>
-          <div style="font-size:20px;font-weight:800;color:var(--green)">${fmtR(saipTotals.faturamento)}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Ticket médio</div>
-          <div style="font-size:22px;font-weight:800;color:var(--orange)">${saipTotals.pedidos>0?fmtR(saipTotals.faturamento/saipTotals.pedidos):'–'}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center">
-          <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Meta → % pedidos</div>
-          <div style="font-size:22px;font-weight:800;color:var(--purple)">${saipTotals.pedidos>0&&totalPurch>0?(totalPurch/saipTotals.pedidos*100).toFixed(1)+'%':'–'}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr"><div><div class="card-ttl">Gasto diário vs Pedidos Saipos</div><div class="card-sub">Últimos 30 dias · Pituba</div></div></div>
-    <div style="position:relative;width:100%;height:220px"><canvas id="cMetaDia" role="img" aria-label="Gráfico gasto Meta vs pedidos Saipos por dia"></canvas></div>
-  </div>
-
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-hdr"><div><div class="card-ttl">Faturamento Saipos por dia</div><div class="card-sub">Receita real · Pituba · últimos 30 dias</div></div></div>
-    <div style="position:relative;width:100%;height:180px"><canvas id="cMetaFat" role="img" aria-label="Gráfico faturamento Saipos diário Pituba"></canvas></div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr"><div><div class="card-ttl">Alertas automáticos</div><div class="card-sub">Gerados em tempo real · ${new Date().toLocaleDateString('pt-BR')}</div></div></div>
-    ${alertas.map(a=>`
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:${a.tipo==='danger'?'rgba(224,53,53,.1)':a.tipo==='warning'?'rgba(249,115,22,.1)':'rgba(34,197,94,.1)'};border:1px solid ${a.tipo==='danger'?'rgba(224,53,53,.25)':a.tipo==='warning'?'rgba(249,115,22,.25)':'rgba(34,197,94,.25)'}">
-        <span style="font-size:16px;flex-shrink:0">${a.icon}</span>
-        <span style="font-size:12px;color:var(--txt);line-height:1.5">${a.msg}</span>
-      </div>`).join('')}
-  </div>
-</div>`;
-
-    // Charts
-    dC('cMetaDia');dC('cMetaFat');
-    const co={...CO,scales:{...CO.scales,y:{...CO.scales.y,position:'left'},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:'#5a5768',font:{size:10}}}}};
-    CHARTS['cMetaDia']=new Chart(document.getElementById('cMetaDia'),{
-      type:'bar',
-      data:{labels,datasets:[
-        {label:'Gasto Meta (R$)',data:spendSeries,backgroundColor:'rgba(59,130,246,0.5)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,yAxisID:'y'},
-        {label:'Pedidos Saipos',data:pedidosSeries,type:'line',borderColor:'#22c55e',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#22c55e',yAxisID:'y2',tension:0.3}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#9a97a8',font:{size:11},boxWidth:10,padding:10}}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5768',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},x:{grid:{display:false},ticks:{color:'#5a5768',font:{size:9},maxRotation:45}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:'#22c55e',font:{size:10}}}}}
-    });
-    CHARTS['cMetaFat']=new Chart(document.getElementById('cMetaFat'),{
-      type:'bar',
-      data:{labels,datasets:[{label:'Faturamento (R$)',data:fatSeries,backgroundColor:'rgba(34,197,94,0.45)',borderColor:'#22c55e',borderWidth:1,borderRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a5768',font:{size:10},callback:v=>'R$'+v.toLocaleString('pt-BR')}},x:{grid:{display:false},ticks:{color:'#5a5768',font:{size:9},maxRotation:45}}}}
-    });
-
-  }catch(e){
-    console.error('pgMetaAds erro:',e);
-    document.getElementById('mc').innerHTML='<div class="loading" style="color:#ef4444">Erro ao carregar Meta Ads: '+e.message+'</div>';
-  }
-}
 
 function pgSemanas(){
   const mc=document.getElementById('mc');
