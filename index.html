@@ -363,18 +363,18 @@ const UNIDADES_KEY='itta_unidades';
 // ── Quais unidades têm dados em cada módulo (uma linha por módulo — mude aqui) ──
 const DADOS_POR_MODULO={
   analytics:          ['Pituba','Alphaville','Vilas'], // Visão geral: pedidos, faturamento, ticket médio, cancelamentos
-  analytics_sabores:  ['Pituba'],                      // Visão geral: cards e blocos de pizzas e sabores
+  analytics_sabores:  ['Pituba','Alphaville','Vilas'],                      // Visão geral: cards e blocos de pizzas e sabores
   financeiro:         ['Pituba','Alphaville','Vilas'], // Financeiro: parte de vendas
-  financeiro_sabores: ['Pituba'],                      // Financeiro: receita por horário e por sabor
+  financeiro_sabores: ['Pituba','Alphaville','Vilas'],                      // Financeiro: receita por horário e por sabor
   semanas:            ['Pituba','Alphaville','Vilas'],
-  sabores:            ['Pituba'],
-  horarios:           ['Pituba'],
-  dias:               ['Pituba'],
+  sabores:            ['Pituba','Alphaville','Vilas'],
+  horarios:           ['Pituba','Alphaville','Vilas'],
+  dias:               ['Pituba','Alphaville','Vilas'],
   bairros:            ['Pituba'],
   clientes:           ['Pituba'],
   cupons:             ['Pituba'],
   adicionais:         ['Pituba'],
-  tabela:             ['Pituba'],
+  tabela:             ['Pituba','Alphaville','Vilas'],
   dre:                ['Pituba'],
   canais:             ['Pituba','Alphaville','Vilas'],
 };
@@ -387,6 +387,8 @@ function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()=
 let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],ITENS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 let VHIST_ALL=[],VHIST_PITUBA=[],UNIDADES_ERRO=[];
+let RAW_ALL=[],SABORES_ERRO=[]; // RAW_ALL = sabores de todas as unidades; RAW = só as selecionadas
+const MODS_SABORES=['sabores','horarios','dias','tabela','analytics_sabores','financeiro_sabores'];
 let UNIDADES_SEL=lerUnidadesSalvas();
 
 // Acesso do usuário (módulos + unidades) — controle de tela, não é segurança
@@ -425,14 +427,17 @@ function lerUnidadesSalvas(){
 function salvarUnidades(){try{localStorage.setItem(UNIDADES_KEY,JSON.stringify(UNIDADES_SEL));}catch(e){}}
 function soPituba(){return UNIDADES_SEL.length===1&&UNIDADES_SEL[0]==='Pituba';}
 function incluiPituba(){return UNIDADES_SEL.includes('Pituba');}
-function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));}
+function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));RAW=RAW_ALL.filter(d=>s.has(d.unidade));}
 function avisoParcialHTML(mod){
   if(soPituba())return'';
   const d=DADOS_POR_MODULO[mod]||['Pituba'];
   const faltam=UNIDADES_SEL.filter(u=>!d.includes(u));
-  if(!faltam.length)return'';
+  const erro=MODS_SABORES.includes(mod)?UNIDADES_SEL.filter(u=>d.includes(u)&&SABORES_ERRO.includes(u)):[];
+  if(!faltam.length&&!erro.length)return'';
   const tem=(d.length===1&&d[0]==='Pituba')?'a Pituba':listaUnidadesTxt(d);
-  return '<div class="un-aviso">⚠️ Estes dados ainda incluem apenas '+tem+'. '+listaUnidadesTxt(faltam)+(faltam.length>1?' entram':' entra')+' na próxima fase.</div>';
+  const txtFalta=faltam.length?'Estes dados ainda incluem apenas '+tem+'. '+listaUnidadesTxt(faltam)+(faltam.length>1?' entram':' entra')+' na próxima fase.':'';
+  const txtErro=erro.length?(txtFalta?' ':'')+'Não foi possível carregar os sabores de '+listaUnidadesTxt(erro)+'.':'';
+  return '<div class="un-aviso">⚠️ '+txtFalta+txtErro+'</div>';
 }
 function syncUnidadesUI(){
   const perm=unidadesPermitidas();
@@ -571,14 +576,16 @@ function toggleTheme(){
 async function load(){
   try{
     // Usuário sem a Pituba entre as unidades: não baixa as abas só da Pituba (variáveis ficam vazias)
+    console.time('load total');
     const carregaPituba=unidadesPermitidas().includes('Pituba');
-    if(carregaPituba){ // Sabores_6meses + Vendas_Historico (Pituba)
-    const r=await fetch(BASE+encodeURIComponent('Sabores_6meses'));
-    const t=await r.text();
-    const j=JSON.parse(t.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     function pH(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p2(+p[3])+':'+p2(+p[4]);}if(typeof v==='string'&&v.match(/^\d{1,2}:\d{2}/))return v.substring(0,5);if(typeof v==='number'){const totalMin=Math.round(v*24*60);return p2(Math.floor(totalMin/60))+':'+p2(totalMin%60);}return'';}
     function pB(v){const h=pH(v);if(!h||h.includes('N'))return'';const p=h.split(':');if(p.length<2)return'';return p2(+p[0])+':'+(+p[1]<30?'00':'30');}
     function pD(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+p2(+p[1]+1)+'-'+p2(+p[2]);}if(typeof v==='string')return v.substring(0,10);if(v instanceof Date)return v.getFullYear()+'-'+p2(v.getMonth()+1)+'-'+p2(v.getDate());return '';}
+    if(carregaPituba){ // Sabores_6meses + Vendas_Historico (Pituba)
+    console.time('Sabores_6meses (Pituba)');
+    const r=await fetch(BASE+encodeURIComponent('Sabores_6meses'));
+    const t=await r.text();
+    const j=JSON.parse(t.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
     RAW = []; // garante reset antes de processar
     const totalRows = j.table.rows.length;
     document.getElementById('mc').innerHTML='<div class="loading"><div class="spin"></div>Carregando dados... 0%</div>';
@@ -609,6 +616,7 @@ async function load(){
       }
       setTimeout(processChunk, 0);
     });
+    console.timeEnd('Sabores_6meses (Pituba)');
 
     // Vendas_Historico (financeiro histórico completo)
     try{
@@ -632,6 +640,39 @@ async function load(){
     } // fim if(carregaPituba) — Sabores_6meses + Vendas_Historico
     VHIST.forEach(d=>{d.unidade='Pituba';});
     VHIST_PITUBA=VHIST;
+    RAW.forEach(d=>{d.unidade='Pituba';});
+    const RAW_PITUBA=RAW;
+
+    // Sabores das outras unidades (Sabores_Raw_<unidade>), só dos últimos 14 meses (mesmo período do Sabores_6meses),
+    // mesmo parse/formato da Pituba + campo unidade. Só as unidades que o usuário pode ver; cada aba com try/catch próprio.
+    SABORES_ERRO=[];
+    const limSab=new Date();limSab.setMonth(limSab.getMonth()-14);
+    const tqSab=encodeURIComponent("select * where A >= date '"+ds(limSab)+"'");
+    const outrosSab=await Promise.all([['Alphaville','Sabores_Raw_Alphaville'],['Vilas','Sabores_Raw_Vilas']].filter(([un])=>unidadesPermitidas().includes(un)).map(async([un,aba])=>{
+      console.time(aba);
+      try{
+        const resp=await fetch(BASE+encodeURIComponent(aba)+'&tq='+tqSab);
+        const txt=await resp.text();
+        const js=JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+        const lst=[];
+        (js.table.rows||[]).forEach(r=>{
+          if(!r||!r.c)return;
+          const d={
+            data:pD(r.c[0]?.v),hora:pH(r.c[1]?.v),bloco:pB(r.c[2]?.v)||pB(r.c[1]?.v),
+            dia:r.c[3]?.v||'',sabor:norm(r.c[4]?.v||''),
+            tamanho:r.c[5]?.v||'',tipo:r.c[6]?.v||'',
+            qtd:parseFloat(r.c[7]?.v||0),id:String(r.c[8]?.v||''),unidade:un
+          };
+          // ignora cabeçalho e linhas inválidas (data fora do formato, sem sabor ou sem quantidade)
+          if(/^\d{4}-\d{2}-\d{2}$/.test(d.data)&&d.sabor&&d.qtd>0)lst.push(d);
+        });
+        if(!lst.length)throw new Error('nenhuma linha válida (aba ausente ou vazia)');
+        console.log(aba+':',lst.length,'registros');
+        return lst;
+      }catch(e){console.log(aba+' err:',e);SABORES_ERRO.push(un);return[];}
+      finally{console.timeEnd(aba);}
+    }));
+    RAW_ALL=RAW_PITUBA.concat(...outrosSab);
 
     // Vendas_Historico das outras unidades (cada aba com seu próprio try/catch)
     UNIDADES_ERRO=[];
@@ -766,6 +807,8 @@ async function load(){
     document.getElementById('sdot').style.cssText='background:var(--green);box-shadow:0 0 8px var(--green)';
     document.getElementById('stxt').textContent='Sincronizado hoje';
     if(UNIDADES_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ '+UNIDADES_ERRO.join(', ')+' indisponível';st.title='Falha ao carregar vendas de: '+UNIDADES_ERRO.join(', ');}
+    if(SABORES_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ sabores '+SABORES_ERRO.join(', ')+' indisponível';st.title=(st.title?st.title+' · ':'')+'Falha ao carregar sabores de: '+SABORES_ERRO.join(', ');}
+    console.timeEnd('load total');
     syncUnidadesUI();
     return true;
   }catch(e){
@@ -898,7 +941,9 @@ function pgOverview(at,an,i,f,ci,cf){
   const fatOvB=vhOvB.reduce((s,v)=>s+(v.valor||0),0);
   const dFat=dlt(fatOvA,fatOvB),dTick=dlt(tickOvA,tickOvB);
   const soPit=soPituba();
-  const notaPit=soPit?'':'<div style="font-size:9px;color:var(--yellow);margin-top:3px">⚠️ apenas Pituba</div>';
+  // Nota nos cards de pizzas/sabores: só quando alguma unidade selecionada está sem dados de sabores
+  const semSabSel=UNIDADES_SEL.filter(u=>!(DADOS_POR_MODULO.analytics_sabores||[]).includes(u)||SABORES_ERRO.includes(u));
+  const notaPit=(soPit||!semSabSel.length)?'':'<div style="font-size:9px;color:var(--yellow);margin-top:3px">⚠️ sem '+listaUnidadesTxt(semSabSel)+'</div>';
   // Sem a Pituba entre as unidades do usuário: não há dados de pizzas/sabores → só pedidos, faturamento, ticket e cancelamentos
   const semSab=semDadosNoModulo('analytics_sabores');
 
