@@ -373,7 +373,7 @@ const DADOS_POR_MODULO={
   bairros:            ['Pituba'],
   clientes:           ['Pituba'],
   cupons:             ['Pituba'],
-  adicionais:         ['Pituba'],
+  adicionais:         ['Pituba','Alphaville','Vilas'],
   tabela:             ['Pituba','Alphaville','Vilas'],
   dre:                ['Pituba'],
   canais:             ['Pituba','Alphaville','Vilas'],
@@ -387,7 +387,7 @@ function norm(n){const s=(n||'').trim();for(const x of SABS){if(x.toLowerCase()=
 let RAW=[],VRAW=[],VCMP=[],VHIST=[],BAIRROS=[],COORDS={},CLIENTES=[],CUPONS=[],ITENS=[];
 let cMode='auto',PAGE='analytics',CHARTS={};
 let VHIST_ALL=[],VHIST_PITUBA=[],UNIDADES_ERRO=[];
-let RAW_ALL=[],SABORES_ERRO=[]; // RAW_ALL = sabores de todas as unidades; RAW = só as selecionadas
+let RAW_ALL=[],SABORES_ERRO=[],ITENS_ALL=[],ITENS_ERRO=[]; // RAW_ALL = sabores de todas as unidades; RAW = só as selecionadas
 const MODS_SABORES=['sabores','horarios','dias','tabela','analytics_sabores','financeiro_sabores'];
 let UNIDADES_SEL=lerUnidadesSalvas();
 
@@ -427,16 +427,17 @@ function lerUnidadesSalvas(){
 function salvarUnidades(){try{localStorage.setItem(UNIDADES_KEY,JSON.stringify(UNIDADES_SEL));}catch(e){}}
 function soPituba(){return UNIDADES_SEL.length===1&&UNIDADES_SEL[0]==='Pituba';}
 function incluiPituba(){return UNIDADES_SEL.includes('Pituba');}
-function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));RAW=RAW_ALL.filter(d=>s.has(d.unidade));}
+function filtrarVhistUnidades(){const s=new Set(UNIDADES_SEL);VHIST=VHIST_ALL.filter(v=>s.has(v.unidade));RAW=RAW_ALL.filter(d=>s.has(d.unidade));ITENS=ITENS_ALL.filter(d=>s.has(d.unidade));}
 function avisoParcialHTML(mod){
   if(soPituba())return'';
   const d=DADOS_POR_MODULO[mod]||['Pituba'];
   const faltam=UNIDADES_SEL.filter(u=>!d.includes(u));
-  const erro=MODS_SABORES.includes(mod)?UNIDADES_SEL.filter(u=>d.includes(u)&&SABORES_ERRO.includes(u)):[];
+  const errCarga=MODS_SABORES.includes(mod)?{l:SABORES_ERRO,n:'os sabores'}:mod==='adicionais'?{l:ITENS_ERRO,n:'os adicionais'}:{l:[],n:''};
+  const erro=UNIDADES_SEL.filter(u=>d.includes(u)&&errCarga.l.includes(u));
   if(!faltam.length&&!erro.length)return'';
   const tem=(d.length===1&&d[0]==='Pituba')?'a Pituba':listaUnidadesTxt(d);
   const txtFalta=faltam.length?'Estes dados ainda incluem apenas '+tem+'. '+listaUnidadesTxt(faltam)+(faltam.length>1?' entram':' entra')+' na próxima fase.':'';
-  const txtErro=erro.length?(txtFalta?' ':'')+'Não foi possível carregar os sabores de '+listaUnidadesTxt(erro)+'.':'';
+  const txtErro=erro.length?(txtFalta?' ':'')+'Não foi possível carregar '+errCarga.n+' de '+listaUnidadesTxt(erro)+'.':'';
   return '<div class="un-aviso">⚠️ '+txtFalta+txtErro+'</div>';
 }
 function syncUnidadesUI(){
@@ -581,6 +582,7 @@ async function load(){
     function pH(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p2(+p[3])+':'+p2(+p[4]);}if(typeof v==='string'&&v.match(/^\d{1,2}:\d{2}/))return v.substring(0,5);if(typeof v==='number'){const totalMin=Math.round(v*24*60);return p2(Math.floor(totalMin/60))+':'+p2(totalMin%60);}return'';}
     function pB(v){const h=pH(v);if(!h||h.includes('N'))return'';const p=h.split(':');if(p.length<2)return'';return p2(+p[0])+':'+(+p[1]<30?'00':'30');}
     function pD(v){if(!v)return'';if(typeof v==='string'&&v.startsWith('Date(')){const p=v.replace('Date(','').replace(')','').split(',');return p[0]+'-'+p2(+p[1]+1)+'-'+p2(+p[2]);}if(typeof v==='string')return v.substring(0,10);if(v instanceof Date)return v.getFullYear()+'-'+p2(v.getMonth()+1)+'-'+p2(v.getDate());return '';}
+    const normCat=c=>{const s=String(c||'').trim().toUpperCase();if(s.includes('SWEET'))return'Sweet Roll';if(s.includes('BEBIDA'))return'Bebida';if(s.includes('FINGER'))return'Finger';if(s.includes('ROLL'))return'Roll';return String(c||'').trim()||'Outro';}; // categoria dos adicionais (Itens_Raw*)
     if(carregaPituba){ // Sabores_6meses + Vendas_Historico (Pituba)
     console.time('Sabores_6meses (Pituba)');
     const r=await fetch(BASE+encodeURIComponent('Sabores_6meses'));
@@ -785,11 +787,11 @@ async function load(){
 
     // Itens_Raw (Adicionais: Bebida/Roll/Finger/Sweet Roll)
     try{
+      console.time('Itens_Raw (Pituba)');
       const urlIt=BASE+encodeURIComponent('Itens_Raw');
       const respIt=await fetch(urlIt);
       const txtIt=await respIt.text();
       const jsonIt=JSON.parse(txtIt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
-      const normCat=c=>{const s=String(c||'').trim().toUpperCase();if(s.includes('SWEET'))return'Sweet Roll';if(s.includes('BEBIDA'))return'Bebida';if(s.includes('FINGER'))return'Finger';if(s.includes('ROLL'))return'Roll';return String(c||'').trim()||'Outro';};
       ITENS=jsonIt.table.rows.slice(1).map(r=>{
         let dt='';
         const dv=r.c[0]?.v||'';
@@ -800,7 +802,40 @@ async function load(){
       }).filter(d=>d.data&&d.item);
       console.log('Itens_Raw:',ITENS.length,'registros');
     }catch(e){console.log('Itens_Raw err:',e);}
+    console.timeEnd('Itens_Raw (Pituba)');
     } // fim if(carregaPituba) — Vendas_Raw … Itens_Raw
+    ITENS.forEach(d=>{d.unidade='Pituba';});
+    const ITENS_PITUBA=ITENS;
+
+    // Adicionais das outras unidades (Itens_Raw_<unidade>): mesmo parse/formato da Pituba + campo unidade.
+    // Só as unidades que o usuário pode ver; cada aba com try/catch próprio.
+    ITENS_ERRO=[];
+    const outrosItens=await Promise.all([['Alphaville','Itens_Raw_Alphaville'],['Vilas','Itens_Raw_Vilas']].filter(([un])=>unidadesPermitidas().includes(un)).map(async([un,aba])=>{
+      console.time(aba);
+      try{
+        const resp=await fetch(BASE+encodeURIComponent(aba));
+        const txt=await resp.text();
+        const js=JSON.parse(txt.replace(/^[^\(]+\(/,'').replace(/\);?$/,''));
+        const lst=[];
+        (js.table.rows||[]).forEach(r=>{
+          if(!r||!r.c)return;
+          let dt='';
+          const dv=r.c[0]?.v||'';
+          if(typeof dv==='string'&&dv.startsWith('Date(')){const p=dv.replace('Date(','').replace(')','').split(',');dt=p[0]+'-'+String(parseInt(p[1])+1).padStart(2,'0')+'-'+String(parseInt(p[2])).padStart(2,'0');}
+          else if(typeof dv==='string')dt=dv.substring(0,10);
+          const cat=r.c[3]?.v||'';
+          const d={data:dt,idPedido:String(r.c[1]?.v||''),item:r.c[2]?.v||'',categoria:cat,categoriaNorm:normCat(cat),quantidade:parseFloat(r.c[4]?.v||0),valorUnit:parseFloat(r.c[5]?.v||0),total:parseFloat(r.c[6]?.v||0),unidade:un};
+          // ignora cabeçalho e linhas inválidas (data fora do formato ou sem item)
+          if(/^\d{4}-\d{2}-\d{2}$/.test(d.data)&&d.item)lst.push(d);
+        });
+        if(!lst.length)throw new Error('nenhuma linha válida (aba ausente ou vazia)');
+        console.log(aba+':',lst.length,'registros');
+        return lst;
+      }catch(e){console.log(aba+' err:',e);ITENS_ERRO.push(un);return[];}
+      finally{console.timeEnd(aba);}
+    }));
+    ITENS_ALL=ITENS_PITUBA.concat(...outrosItens);
+    filtrarVhistUnidades();
 
     const sel=document.getElementById('fSab');
     SABS.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
@@ -808,6 +843,7 @@ async function load(){
     document.getElementById('stxt').textContent='Sincronizado hoje';
     if(UNIDADES_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ '+UNIDADES_ERRO.join(', ')+' indisponível';st.title='Falha ao carregar vendas de: '+UNIDADES_ERRO.join(', ');}
     if(SABORES_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ sabores '+SABORES_ERRO.join(', ')+' indisponível';st.title=(st.title?st.title+' · ':'')+'Falha ao carregar sabores de: '+SABORES_ERRO.join(', ');}
+    if(ITENS_ERRO.length){const st=document.getElementById('stxt');st.textContent+=' · ⚠ adicionais '+ITENS_ERRO.join(', ')+' indisponível';st.title=(st.title?st.title+' · ':'')+'Falha ao carregar adicionais de: '+ITENS_ERRO.join(', ');}
     console.timeEnd('load total');
     syncUnidadesUI();
     return true;
